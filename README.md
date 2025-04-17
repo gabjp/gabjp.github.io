@@ -1,7 +1,7 @@
 # Undergraduate Thesis - MAC0499 - IME/USP
 
 ## Introduction  
-Geometric Deep Learning (GDL) is a subfield of machine learning focused on designing neural network architectures that respect the inherent symmetries and invariances of the data. Traditionally, the development of neural network architectures has leaned more toward an empirical craft—driven by trial and error—than a rigorous science. GDL aims to provide a mathematical framework that connects architectural design to the underlying mathematical structures of the data domain, guided by inductive biases embedded in the architectures.
+Geometric Deep Learning (GDL) is a subfield of machine learning focused on designing neural network architectures that respect the inherent symmetries and invariances of the data. Traditionally, the development of neural network architectures has leaned more toward an empirical craft, driven by trial and error. GDL aims to provide a mathematical framework that connects architectural design to the underlying mathematical structures of the data domain, guided by inductive biases embedded in the architectures.
 
 ## Objective
 - **Theoretical Component (Monograph):** To introduce, explain, and illustrate the core concepts of GDL in a clear and accessible way, simplifying and summarizing the foundational work presented in [1].  
