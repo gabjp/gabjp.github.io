@@ -26,6 +26,9 @@ The reader is introduced to foundational concepts in Machine Learning, the role 
 - 💻 **Code Repository:**  
   [GitHub repository](https://github.com/gabjp/GDL-SGG)
 
+- 🪧 **Poster (PDF):**  
+  [Download the poster](poster.pdf)
+
 ---
 
 [← Back to main page](../)
