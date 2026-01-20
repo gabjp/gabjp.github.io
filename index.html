@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Gabriel Jacob Perin</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <style>
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      color: #111;
+      line-height: 1.6;
+      background: #fff;
+    }
+
+    /* ===== Header ===== */
+    header {
+    background: #000;
+    }
+
+    .header-inner {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 14px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    }
+
+    .name {
+    font-weight: 600;
+    color: #fff;
+    }
+
+    nav a {
+    margin-left: 16px;
+    text-decoration: none;
+    color: #eaeaea;
+    font-size: 0.95rem;
+    }
+
+    nav a:hover {
+    text-decoration: underline;
+    color: #ffffff;
+    }
+
+
+    /* ===== Sections ===== */
+    section {
+      max-width: 900px;
+      margin: 60px auto;
+      padding: 0 20px;
+    }
+
+    h2 {
+      margin-bottom: 20px;
+      border-bottom: 1px solid #ddd;
+      padding-bottom: 6px;
+      font-size: 1.25rem;
+    }
+
+    /* ===== About ===== */
+    .about-grid {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      column-gap: 18px;
+      align-items: start;
+    }
+
+    .about-photo img {
+      width: 150px;
+      border-radius: 4px;
+      border: 1px solid #ddd;
+      display: block;
+    }
+
+    .about-text {
+      margin-left: -4px;
+    }
+
+    .about-text p {
+        text-align: justify;
+        text-justify: inter-word;
+        hyphens: auto;
+        margin-top: 0;
+        margin-bottom: 12px;
+    }
+
+    /* ===== Icon links ===== */
+    .icon-links {
+      margin-top: 8px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 18px;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .icon-links a {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      text-decoration: none;
+      color: #333;
+      font-size: 0.95rem;
+    }
+
+    .icon-links a:hover {
+      text-decoration: underline;
+    }
+
+    .icon-links svg {
+      width: 18px;
+      height: 18px;
+      fill: currentColor;
+    }
+
+    /* ===== News ===== */
+    .news {
+      list-style: none;
+      padding-left: 0;
+    }
+
+    .news li {
+      margin-bottom: 6px;
+    }
+
+    .news .date {
+      font-family: monospace;
+      color: #666;
+      margin-right: 10px;
+    }
+
+    /* ===== Publications ===== */
+    .pubs {
+      list-style: none;
+      padding-left: 0;
+    }
+
+    .pubs li {
+      margin-bottom: 18px;
+    }
+
+    /* ===== Responsive ===== */
+    @media (max-width: 700px) {
+      .about-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .about-text {
+        margin-left: 0;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+<header>
+  <div class="header-inner">
+    <span class="name">Gabriel Jacob Perin</span>
+    <nav>
+      <a href="#about">About</a>
+      <a href="#news">News</a>
+      <a href="#publications">Publications</a>
+      <a href="#other">Other</a>
+    </nav>
+  </div>
+</header>
+
+<section id="about">
+  <h2>About Me</h2>
+
+  <div class="about-grid">
+    <div class="about-photo">
+      <img src="assets/photo.jpg" alt="Gabriel Jacob Perin">
+    </div>
+
+    <div class="about-text">
+    <p>
+    I am an MSc student in Computer Science at the University of São Paulo (IME-USP),
+    advised by
+    <a href="https://www.ime.usp.br/~nina/" target="_blank" rel="noopener noreferrer">
+        Prof. Nina S. T. Hirata</a>.
+    My research lies at the intersection of Large Language Models, Geometric Deep Learning,
+    and AI for Science.
+    </p>
+
+    <p>
+    Previously, I was a research intern at IBM Research, working on geometric deep learning
+    for materials science with
+    <a href="https://scholar.google.com/citations?hl=en&user=j81F0a8AAAAJ&view_op=list_works&sortby=pubdate" target="_blank" rel="noopener noreferrer">
+        Dr. Mathias Steiner</a>’s team. I was also a research intern at the University of Texas at Austin,
+    hosted by
+    <a href="https://vita-group.github.io/" target="_blank" rel="noopener noreferrer">
+        Prof. Zhangyang “Atlas” Wang (VITA Group)</a>,
+    where I worked closely with
+    <a href="https://jyhong.gitlab.io/" target="_blank" rel="noopener noreferrer">
+        Prof. Junyuan “Jason” Hong</a>
+    on Large Language Models. I received my BSc in Computer Science from IME-USP.
+    </p>
+
+
+
+      <div class="icon-links">
+
+        <a href="cv.pdf" title="Curriculum Vitae">
+          <svg viewBox="0 0 24 24"><path d="M6 2h9l5 5v15a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2zm8 1.5V8h4.5"/></svg>
+          CV
+        </a>
+
+        <a href="https://github.com/gabjp" title="GitHub">
+          <svg viewBox="0 0 24 24"><path d="M12 .5C5.7.5.5 5.7.5 12c0 5.1 3.3 9.4 7.9 10.9.6.1.8-.3.8-.6v-2.1c-3.2.7-3.9-1.4-3.9-1.4-.5-1.3-1.2-1.6-1.2-1.6-1-.7.1-.7.1-.7 1.1.1 1.7 1.2 1.7 1.2 1 .1 1.5-.7 1.9-1.2.1-.7.4-1.2.7-1.4-2.6-.3-5.4-1.3-5.4-5.9 0-1.3.5-2.4 1.2-3.3-.1-.3-.5-1.5.1-3.1 0 0 1-.3 3.3 1.2.9-.3 1.9-.4 2.9-.4s2 .1 2.9.4c2.3-1.5 3.3-1.2 3.3-1.2.6 1.6.2 2.8.1 3.1.8.9 1.2 2 1.2 3.3 0 4.6-2.8 5.6-5.4 5.9.4.4.8 1 .8 2v3c0 .3.2.7.8.6 4.6-1.5 7.9-5.8 7.9-10.9C23.5 5.7 18.3.5 12 .5z"/></svg>
+          GitHub
+        </a>
+
+        <a href="#" title="LinkedIn">
+          <svg viewBox="0 0 24 24"><path d="M4.98 3.5C4.98 4.88 3.88 6 2.5 6S0 4.88 0 3.5 1.12 1 2.5 1 4.98 2.12 4.98 3.5zM0 8h5v16H0zM7.5 8h4.8v2.2h.1c.7-1.3 2.4-2.7 4.9-2.7 5.2 0 6.2 3.4 6.2 7.9V24h-5v-7.4c0-1.8 0-4.1-2.5-4.1-2.5 0-2.9 2-2.9 4v7.5h-5V8z"/></svg>
+          LinkedIn
+        </a>
+
+        <a href="https://scholar.google.com/citations?user=Ihn-OugAAAAJ&hl=pt-BR" title="Google Scholar">
+          <svg viewBox="0 0 24 24"><path d="M12 3L1 9l11 6 9-4.9V17h2V9L12 3z"/></svg>
+          Scholar
+        </a>
+
+        <a href="https://orcid.org/0000-0002-5990-7497" title="ORCID">
+          <svg viewBox="0 0 24 24"><path d="M7.5 7.5h-2v9h2v-9zm5.4 0H10v9h2.9c3.1 0 5-1.8 5-4.5s-1.9-4.5-5-4.5zm-.2 7H12V9.5h.7c1.9 0 3 1 3 2.5s-1.1 2.5-3 2.5zM19.5 7.5a1 1 0 1 0 0 2 1 1 0 0 0 0-2z"/></svg>
+          ORCID
+        </a>
+
+        <a href="http://lattes.cnpq.br/9092097544379796" title="Lattes CV">
+          <svg viewBox="0 0 24 24"><path d="M4 4h16v2H4zm0 4h10v2H4zm0 4h16v2H4zm0 4h10v2H4z"/></svg>
+          Lattes
+        </a>
+
+        <a href="mailto:gabrieljp@usp.br" title="Email">
+          <svg viewBox="0 0 24 24"><path d="M2 4h20v16H2V4zm10 7L3.5 6h17L12 11z"/></svg>
+          Email
+        </a>
+
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="news">
+  <h2>News</h2>
+  <ul class="news">
+    <li><span class="date">2025-03</span> Started my MSc in Computer Science at the University of São Paulo (IME-USP).</li>
+  </ul>
+</section>
+
+<section id="publications">
+  <h2>Selected Publications</h2>
+  <ul class="pubs">
+    <li>
+      <strong>LoX: Low-Rank Extrapolation Robustifies LLM Safety Against Fine-tuning.</strong><br>
+      <strong>Gabriel Jacob Perin</strong>, R. Chen, X. Chen, N. S. T. Hirata, Z. Wang, J. Hong.<br>
+      COLM 2025.
+    </li>
+    <li>
+      <strong>RankMean: Module-Level Importance Score for Merging Fine-tuned LLM Models.</strong><br>
+      <strong>Gabriel Jacob Perin</strong>, X. Chen, S. Liu, B. Kailkhura, Z. Wang, B. Gallagher.<br>
+      ACL 2024 (Findings).
+    </li>
+    <li>
+      <strong>Few-shot Retinal Disease Classification on the Brazilian Multilabel Ophthalmological Dataset.</strong><br>
+      <strong>Gabriel Jacob Perin</strong>, N. S. T. Hirata.<br>
+      SIBGRAPI 2024.
+    </li>
+  </ul>
+</section>
+
+<section id="other">
+  <h2>Other</h2>
+  <ul>
+    <li><a href="https://gabjp.github.io/ug-thesis/" target="_blank" rel="noopener noreferrer">Undergraduate Thesis</a>.</li>
+    <li>Teaching Assistant — Introduction to Machine Learning (IME-USP, 2025).</li>
+    <li>FAPESP Research Scholarship and BEPE International Fellowship recipient.</li>
+    <li>Languages: Portuguese (native), English (fluent), Spanish (basic).</li>
+  </ul>
+</section>
+
+</body>
+</html>
