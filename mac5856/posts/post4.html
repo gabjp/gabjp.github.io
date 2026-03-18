@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Course Blog</title>
+  <title>Post 1 Title</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -18,7 +18,6 @@
       background: #f5f5f5;
     }
 
-    /* ===== Header ===== */
     header {
       background: #000;
     }
@@ -49,7 +48,6 @@
       color: #ffffff;
     }
 
-    /* ===== Sections ===== */
     section {
       max-width: 900px;
       margin: 60px auto;
@@ -57,44 +55,34 @@
     }
 
     h2 {
-      margin-bottom: 20px;
+      margin-bottom: 10px;
       border-bottom: 1px solid #ddd;
       padding-bottom: 6px;
       font-size: 1.25rem;
     }
 
-    /* ===== Intro ===== */
-    .intro p {
-      margin-top: 0;
-      margin-bottom: 12px;
+    .date {
+      font-family: monospace;
+      color: #666;
+      margin-bottom: 20px;
+    }
+
+    .content p {
       text-align: justify;
       text-justify: inter-word;
       hyphens: auto;
+      margin-top: 0;
+      margin-bottom: 12px;
     }
 
-    /* ===== Posts ===== */
-    .posts {
-      list-style: none;
-      padding-left: 0;
-      margin: 0;
-    }
-
-    .posts li {
-      margin-bottom: 14px;
-    }
-
-    .posts .date {
-      font-family: monospace;
-      color: #666;
-      margin-right: 10px;
-    }
-
-    .posts a {
+    .back-link {
+      display: inline-block;
+      margin-bottom: 18px;
       color: #111;
       text-decoration: none;
     }
 
-    .posts a:hover {
+    .back-link:hover {
       text-decoration: underline;
     }
   </style>
@@ -106,41 +94,22 @@
   <div class="header-inner">
     <a href="https://gabjp.github.io/" class="name">Gabriel Jacob Perin</a>
     <nav>
-      <a href="#about">About</a>
-      <a href="#posts">Posts</a>
+      <a href="../index.html#about">About</a>
+      <a href="../index.html#posts">Posts</a>
     </nav>
   </div>
 </header>
 
-<section id="about">
-  <h2>Course Blog</h2>
-  <div class="intro">
+<section>
+  <a class="back-link" href="../index.html">← Back to blog</a>
+  <h2>Post 1 Title</h2>
+  <div class="date">2026-03-18</div>
+
+  <div class="content">
     <p>
-      This blog contains posts written for MAC5856 - Desenvolvimento de Software Livre.
+      Write your post here.
     </p>
   </div>
-</section>
-
-<section id="posts">
-  <h2>Posts</h2>
-  <ul class="posts">
-    <li>
-      <span class="date">2026-03-18</span>
-      <a href="posts/post4.html">Tutorial 4 - Introduction to Linux kernel Character Device Drivers</a>
-    </li>
-    <li>
-      <span class="date">2026-03-11</span>
-      <a href="posts/post3.html">Tutorial 3 - Introduction to Linux kernel build configuration and modules</a>
-    </li>
-    <li>
-      <span class="date">2026-03-04</span>
-      <a href="posts/post2.html">Tutorial 2 - Building and booting a custom Linux kernel for ARM (using kw)</a>
-    </li>
-    <li>
-      <span class="date">2026-02-25</span>
-      <a href="posts/post1.html">Tutorial 1 - Setting up a test environment for Linux Kernel Dev using QEMU and libvirt</a>
-    </li>
-  </ul>
 </section>
 
 </body>
