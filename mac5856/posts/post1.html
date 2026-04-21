@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Post 1 Title</title>
+  <title>Setting Up a Kernel Development Environment with QEMU + libvirt</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -34,6 +34,7 @@
     .name {
       font-weight: 600;
       color: #fff;
+      text-decoration: none;
     }
 
     nav a {
@@ -61,6 +62,12 @@
       font-size: 1.25rem;
     }
 
+    h3 {
+      margin-top: 32px;
+      margin-bottom: 12px;
+      font-size: 1.05rem;
+    }
+
     .date {
       font-family: monospace;
       color: #666;
@@ -72,7 +79,30 @@
       text-justify: inter-word;
       hyphens: auto;
       margin-top: 0;
-      margin-bottom: 12px;
+      margin-bottom: 14px;
+    }
+
+    .content ul {
+      padding-left: 20px;
+      margin-bottom: 18px;
+    }
+
+    .content li {
+      margin-bottom: 8px;
+    }
+
+    pre {
+      background: #111;
+      color: #f5f5f5;
+      padding: 18px;
+      border-radius: 8px;
+      overflow-x: auto;
+      font-size: 0.92rem;
+      line-height: 1.5;
+    }
+
+    code {
+      font-family: monospace;
     }
 
     .back-link {
@@ -102,13 +132,101 @@
 
 <section>
   <a class="back-link" href="../index.html">← Back to blog</a>
-  <h2>Post 1 Title</h2>
+  <h2>Setting Up a Kernel Development Environment with QEMU + libvirt</h2>
   <div class="date">2026-03-18</div>
 
   <div class="content">
+
+    <h3>Summary</h3>
+
     <p>
-      Write your post here.
+      This blog post describes my experience following the first tutorial for Linux Kernel Development. The main goal is to create a safe and practical
+      environment for kernel development using Virtual Machines (VMs), avoiding the risks of
+      testing directly on the host machine. Instead of rebooting the physical system after
+      every kernel change, we can compile, boot, debug, and test everything inside an isolated
+      VM.
     </p>
+
+    <p>
+      The tutorial uses QEMU as the virtualization backend and libvirt as the management layer.
+      QEMU provides the actual virtual machine execution, while libvirt simplifies tasks such as
+      VM creation, networking, storage handling, and repeated launches. This makes the workflow
+      much cleaner compared to manually invoking long QEMU commands every time. For kernel work,
+      especially when debugging drivers or experimenting with system internals, this setup is far
+      more convenient and significantly reduces friction.
+    </p>
+
+    <h3>My Experience</h3>
+
+    <p>
+      Overall, the process was smoother than I expected. Since my main machine runs Ubuntu,
+      I decided to use the Debian-based path suggested by the tutorial. Package installation, configuring the VM and creating the activate.sh script worked without major issues. 
+
+    <p>
+      The only issue I encountered was that I needed to install SSH inside the VM, which was not explicit in the tutorial. For reference, my final activate.sh file looked like this.
+    </p>
+
+    <h3>activate.sh</h3>
+
+    <pre><code>#!/bin/bash
+
+#!/usr/bin/env bash
+
+# environment variables
+export LK_DEV_DIR='/home/lk_dev' # path to testing environment directory
+export VM_DIR="${LK_DEV_DIR}/vm"
+export BOOT_DIR="${VM_DIR}/arm64_boot" # path to boot artifacts
+
+# Launches a VM with a custom kernel and `initrd`
+function launch_vm_qemu() {
+    sudo qemu-system-aarch64 \
+        -M virt,gic-version=3 \
+        -m 2G -cpu cortex-a57 \
+        -smp 2 \
+        -netdev user,id=net0 -device virtio-net-device,netdev=net0 \
+        -initrd "${BOOT_DIR}/initrd.img-6.1.0-43-arm64" \
+        -kernel "${IIO_TREE}/arch/arm64/boot/Image" \
+        -append "loglevel=8 root=/dev/vda2 rootwait" \
+        -device virtio-blk-pci,drive=hd \
+        -drive if=none,file="${VM_DIR}/arm64_img.qcow2",format=qcow2,id=hd \
+        -nographic
+}
+
+# Registers and starts a VM with `libvirt`
+function create_vm_virsh() {
+    sudo virt-install \
+      --name "arm64" \
+      --memory 2048 \
+      --arch aarch64 --machine virt \
+      --import \
+      --features acpi=off \
+      --disk path="${VM_DIR}/arm64_img.qcow2" \
+      --boot kernel=${IIO_TREE}/arch/arm64/boot/Image,initrd=${BOOT_DIR}/initrd.img-6.1.0-43-arm64,kernel_args="loglevel=8 root=/dev/vda2 rootwait" \
+      --network bridge:virbr0 \
+      --graphics none
+}
+
+
+# export functions so they persist in the new Bash shell session
+export -f launch_vm_qemu
+export -f create_vm_virsh
+
+# prompt preamble
+prompt_preamble='(LK-DEV)'
+
+# colors
+GREEN="\e[32m"
+PINK="\e[35m"
+BOLD="\e[1m"
+RESET="\e[0m"
+
+# launch Bash shell session w/ env vars defined
+echo -e "${GREEN}Entering shell session for Linux Kernel Dev${RESET}"
+echo -e "${GREEN}To exit, type 'exit' or press Ctrl+D.${RESET}"
+exec bash --rcfile <(echo "source ~/.bashrc; PS1=\"\[${BOLD}\]\[${PINK}\]${prompt_preamble}\[${RESET}\] \$PS1\"")
+
+</code></pre>
+
   </div>
 </section>
 

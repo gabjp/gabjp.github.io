@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Post 1 Title</title>
+  <title>Introduction to Linux kernel Character Device Drivers</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -102,14 +102,28 @@
 
 <section>
   <a class="back-link" href="../index.html">← Back to blog</a>
-  <h2>Post 1 Title</h2>
+  <h2>Introduction to Linux kernel Character Device Drivers</h2>
   <div class="date">2026-03-18</div>
 
-  <div class="content">
-    <p>
-      Write your post here.
-    </p>
-  </div>
+<div class="content">
+  <p>
+    <h3>Summary:</h3>
+    This post describes the tutorial on Linux kernel character device drivers. The tutorial introduces the main concepts behind character devices, including major and minor numbers, file operations such as <code>open</code>, <code>read</code>, <code>write</code>, and <code>release</code>, and the role of <code>struct cdev</code> in connecting device identifiers with file operation handlers. It then presents a simple example driver that allocates a character device number, registers a <code>cdev</code>, and implements basic read and write behavior through a kernel buffer. 
+  </p>
+
+  <p>
+    The tutorial also shows how to test the driver from user space by checking registered devices, creating a device node with <code>mknod</code>, and interacting with the driver through standard file operations. In this way, it provides an end-to-end introduction that goes from the conceptual foundations of character devices to writing, loading, and testing a minimal character driver in practice.
+  </p>
+
+  <p>
+    <h3>My experience:</h3>
+    Everything worked smoothly. I did not run into any real technical issues while following the tutorial, and the driver behaved as expected during testing.
+  </p>
+
+  <p>
+    The only problems I had were caused by reading mistakes on my side rather than by the tutorial itself. After correcting those mistakes, I was able to complete the steps successfully.
+  </p>
+</div>
 </section>
 
 </body>

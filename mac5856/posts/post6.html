@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Building and booting a custom Linux kernel for ARM (using kw)</title>
+  <title>The iio_simple_dummy Anatomy</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -102,24 +102,17 @@
 
 <section>
   <a class="back-link" href="../index.html">← Back to blog</a>
-  <h2>Building and booting a custom Linux kernel for ARM (using kw)</h2>
-  <div class="date">2026-03-18</div>
+  <h2>The iio_simple_dummy Anatomy</h2>
+  <div class="date">2026-04-01</div>
 
 <div class="content">
-  <h3>Summary</h3>
   <p>
-    This post describes my experience following the second tutorial in the Linux kernel development series from FLUSP. The tutorial walks through how to build and boot a custom Linux kernel for an ARM64 virtual machine using <code>kw</code> (<em>kworkflow</em>) to streamline the process. In practice, it covers installing <code>kw</code>, cloning the IIO kernel tree, configuring a local <code>kw</code> context for the VM, preparing a lean kernel <code>.config</code>, cross-compiling the kernel for ARM64, deploying modules to the VM, and finally booting the VM with the newly built kernel.
+    <h3>Summary:</h3>
+    This post describes the anatomy of the <code>iio_simple_dummy</code> driver, a toy driver in the Linux Industrial I/O subsystem used to help developers understand how IIO sensor drivers are structured. The tutorial explains the role of <code>struct iio_chan_spec</code> in representing device channels, showing how different fields define channel type, indexing, shared and separate attributes, scan layout for buffered data, and optional event support. It uses the dummy driver as a concrete example to introduce common IIO concepts such as voltage, differential, and modified acceleration channels.
   </p>
 
-  <h3>My Experience</h3>
-<p>
-  Installing <code>kw</code> was the first part where I had trouble. One of its dependencies could not be installed on my system, so I had to remove <code>b4</code> from the Debian dependencies used by <code>kw</code>. After that adjustment, the installation worked. However, <code>kw</code> was still not being added to the <code>PATH</code> variable automatically. To fix that, I added the following lines to the <code>activate.sh</code> script:
-  <code>export KW_DIR="${LK_DEV_DIR}/kw"</code> and
-  <code>export PATH="$PATH:$KW_DIR"</code>. That solved the issue. Cloning the IIO tree worked well, and configuring <code>kw</code> for the local kernel tree and ARM64 target also went smoothly.
-</p>
-
   <p>
-    The main issue appeared after compiling the custom kernel and trying to boot it in the VM. For some reason, once the VM loaded the custom kernel, I could no longer interact with it properly through the terminal console: input and output there were not working as expected. Fortunately, SSH access to the VM was still working, so I continued interacting with the guest through SSH instead. That allowed me to keep testing the environment, deploy modules, and verify the custom kernel even though the direct terminal console was not behaving correctly.
+    The tutorial also examines the main data access paths of the driver through the <code>iio_dummy_read_raw()</code> and <code>iio_dummy_write_raw()</code> functions. It shows how the IIO core uses the channel specification and the requested mask to identify which attribute is being accessed, and how the driver reads from or writes to its internal state accordingly. In this way, the post provides an introduction to both the static channel description and the runtime read/write logic that appear in IIO drivers.
   </p>
 </div>
 </section>

@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Building and booting a custom Linux kernel for ARM (using kw)</title>
+  <title>Sending patches with git and a USP email</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -102,24 +102,26 @@
 
 <section>
   <a class="back-link" href="../index.html">← Back to blog</a>
-  <h2>Building and booting a custom Linux kernel for ARM (using kw)</h2>
-  <div class="date">2026-03-18</div>
+  <h2>Sending patches with git and a USP email</h2>
+  <div class="date">2026-03-25</div>
 
 <div class="content">
-  <h3>Summary</h3>
   <p>
-    This post describes my experience following the second tutorial in the Linux kernel development series from FLUSP. The tutorial walks through how to build and boot a custom Linux kernel for an ARM64 virtual machine using <code>kw</code> (<em>kworkflow</em>) to streamline the process. In practice, it covers installing <code>kw</code>, cloning the IIO kernel tree, configuring a local <code>kw</code> context for the VM, preparing a lean kernel <code>.config</code>, cross-compiling the kernel for ARM64, deploying modules to the VM, and finally booting the VM with the newly built kernel.
+    <h3>Summary:</h3>
+    This post describes a tutorial on sending patches by email with <code>git send-email</code> using a USP email account. Because USP email accounts have some restrictions that make the usual Gmail setup impractical, the tutorial presents an alternative workflow based on an OAuth 2.0 email proxy. It explains the problem with standard authentication, introduces the proxy-based approach, and shows how to configure the necessary components so that patches can be sent from the command line with a USP address.
   </p>
 
-  <h3>My Experience</h3>
-<p>
-  Installing <code>kw</code> was the first part where I had trouble. One of its dependencies could not be installed on my system, so I had to remove <code>b4</code> from the Debian dependencies used by <code>kw</code>. After that adjustment, the installation worked. However, <code>kw</code> was still not being added to the <code>PATH</code> variable automatically. To fix that, I added the following lines to the <code>activate.sh</code> script:
-  <code>export KW_DIR="${LK_DEV_DIR}/kw"</code> and
-  <code>export PATH="$PATH:$KW_DIR"</code>. That solved the issue. Cloning the IIO tree worked well, and configuring <code>kw</code> for the local kernel tree and ARM64 target also went smoothly.
-</p>
+  <p>
+    The tutorial is organized around three main steps: running the email proxy with Docker, configuring <code>git send-email</code> through <code>kw send-patch</code>, and testing the setup by sending a sample patch. It also explains the authentication flow used by the proxy, including the browser-based OAuth step and the final verification that the SMTP connection is working correctly. 
+  </p>
 
   <p>
-    The main issue appeared after compiling the custom kernel and trying to boot it in the VM. For some reason, once the VM loaded the custom kernel, I could no longer interact with it properly through the terminal console: input and output there were not working as expected. Fortunately, SSH access to the VM was still working, so I continued interacting with the guest through SSH instead. That allowed me to keep testing the environment, deploy modules, and verify the custom kernel even though the direct terminal console was not behaving correctly.
+    <h3>My experience:</h3>
+    I followed path B from the tutorial. Everything worked as expected overall, but I first had to install Docker because it was not already available on my system.
+  </p>
+
+  <p>
+    I also had to run <code>git config --local sendemail.smtpencryption none</code> inside the repository folder to avoid a bug during the setup. After that adjustment, the workflow proceeded normally.
   </p>
 </div>
 </section>

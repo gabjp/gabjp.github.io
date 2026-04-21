@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Linux Kernel Contribution 1</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <style>
+    body {
+      margin: 0;
+      font-family: "IBM Plex Sans", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      color: #111;
+      line-height: 1.6;
+      background: #f5f5f5;
+    }
+
+    header {
+      background: #000;
+    }
+
+    .header-inner {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 14px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .name {
+      font-weight: 600;
+      color: #fff;
+      text-decoration: none;
+    }
+
+    nav a {
+      margin-left: 16px;
+      text-decoration: none;
+      color: #eaeaea;
+      font-size: 0.95rem;
+    }
+
+    nav a:hover {
+      text-decoration: underline;
+      color: #ffffff;
+    }
+
+    section {
+      max-width: 900px;
+      margin: 60px auto;
+      padding: 0 20px;
+    }
+
+    h2 {
+      margin-bottom: 10px;
+      border-bottom: 1px solid #ddd;
+      padding-bottom: 6px;
+      font-size: 1.25rem;
+    }
+
+    h3 {
+      margin-top: 28px;
+      margin-bottom: 10px;
+      font-size: 1.05rem;
+    }
+
+    .date {
+      font-family: monospace;
+      color: #666;
+      margin-bottom: 20px;
+    }
+
+    .content p {
+      text-align: justify;
+      text-justify: inter-word;
+      hyphens: auto;
+      margin-top: 0;
+      margin-bottom: 12px;
+    }
+
+    .content code {
+      font-family: "IBM Plex Mono", "SFMono-Regular", Consolas, monospace;
+      padding: 0.12rem 0.3rem;
+      border-radius: 4px;
+      font-size: 0.95em;
+    }
+
+    pre {
+      background: #111;
+      color: #f0f0f0;
+      padding: 14px 16px;
+      border-radius: 8px;
+      overflow-x: auto;
+      margin: 14px 0 18px 0;
+      line-height: 1.45;
+      border: 1px solid #ddd;
+    }
+
+    pre code {
+      #background: transparent;
+      padding: 0;
+      color: inherit;
+      border-radius: 0;
+      font-size: 0.95rem;
+    }
+
+    blockquote {
+      margin: 16px 0;
+      padding: 10px 16px;
+      border-left: 4px solid #bbb;
+      background: #efefef;
+      color: #222;
+    }
+
+    .back-link {
+      display: inline-block;
+      margin-bottom: 18px;
+      color: #111;
+      text-decoration: none;
+    }
+
+    .back-link:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+
+<body>
+
+<header>
+  <div class="header-inner">
+    <a href="https://gabjp.github.io/" class="name">Gabriel Jacob Perin</a>
+    <nav>
+      <a href="../index.html#about">About</a>
+      <a href="../index.html#posts">Posts</a>
+    </nav>
+  </div>
+</header>
+
+<section>
+  <a class="back-link" href="../index.html">← Back to blog</a>
+  <h2>Linux Kernel Contribution 1</h2>
+  <div class="date">2026-04-21</div>
+
+  <div class="content">
+    <p>
+      This post describes my first Linux kernel patch submission. We are working on suggestion 2.1,
+      <em>Replace manual bitfield manipulations with <code>FIELD_GET()</code>, <code>FIELD_PREP()</code>, and <code>FIELD_MODIFY()</code></em>.
+      The file we worked on was <code>sound/soc/atmel/atmel-classd.c</code>, which implements the Atmel Class D driver in the ALSA SoC subsystem.
+    </p>
+
+    <p>
+      The main goal of this cleanup was straightforward: identify places where the code manually prepares bitfields using patterns such as
+      <code>x &lt;&lt; shift</code>, and replace them with the kernel helper macros designed specifically for this purpose.
+      In our case, the most common transformation was replacing manual left shifts with <code>FIELD_PREP(mask, value)</code>.
+      These helpers make the code clearer, reduce the chance of mistakes, and match the style encouraged in modern kernel code.
+    </p>
+
+    <h3>Enabling the driver for compilation</h3>
+
+    <p>
+      Before compiling the target file, I had to enable the corresponding kernel configuration option. For that, I opened the kernel configuration menu and enabled
+      <code>CONFIG_SND_ATMEL_SOC_CLASSD</code>. On my setup, this option only became available after enabling <code>COMPILE_TEST</code>, which is commonly needed when building drivers for hardware that is not part of the current machine.
+    </p>
+
+    <pre><code>make menuconfig</code></pre>
+
+    <p>
+      After enabling the relevant options, I prepared the tree and compiled only the driver directory I was modifying:
+    </p>
+
+    <pre><code>make modules_prepare
+ make V=1 M=sound/soc/atmel</code></pre>
+
+    <p>
+      This was enough to verify that the modified file still compiled correctly.
+    </p>
+
+    <h3>Example of the change</h3>
+
+    <p>
+      One representative example of the patch is shown below. The original code manually shifted the value according to the field position:
+    </p>
+
+    <pre><code>- val = pdata-&gt;pwm_type &lt;&lt; CLASSD_MR_PWMTYP_SHIFT;
+ + val = FIELD_PREP(CLASSD_MR_PWMTYP_MASK, pdata-&gt;pwm_type);</code></pre>
+
+    <p>
+      Conceptually, both lines are trying to place <code>pdata-&gt;pwm_type</code> into the correct bit range of the register value. The second version is preferable because it expresses the intent more directly: instead of saying “shift this value by some amount,” it says “prepare this value for this specific field mask.”
+    </p>
+
+    <h3>Validation and submission</h3>
+
+    <p>
+      After testing the patch and checking that it did not introduce any obvious formatting or compilation errors, we sent it to the CI infrastructure prepared by the course monitors. The patch passed CI, and after that we submitted it to the maintainers.
+    </p>
+
+    <p>
+      The response we received was the following, from Mark Brown:
+    </p>
+
+    <blockquote>
+      Please submit patches using subject lines reflecting the style for the
+      subsystem, this makes it easier for people to identify relevant patches.
+      Look at what existing commits in the area you're changing are doing and
+      make sure your subject lines visually resemble what they're doing.
+      There's no need to resubmit to fix this alone.
+    </blockquote>
+
+    <p>
+      This was useful feedback. The code change itself was fine, but the patch subject line did not match the style typically used in that subsystem. This is a good reminder that contributing to the kernel is not only about the technical correctness of the patch, but also about following the conventions that make review easier for maintainers and other developers.
+    </p>
+
+    <p>
+      Overall, this was a good first experience with a real kernel cleanup patch: understand the local coding pattern, make a targeted change, verify that it builds, send it through the expected workflow, and learn from the feedback that comes back.
+    </p>
+  </div>
+</section>
+
+</body>
+</html>

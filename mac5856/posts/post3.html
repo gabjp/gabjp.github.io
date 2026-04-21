@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Post 1 Title</title>
+  <title>Introduction to Linux kernel build configuration and modules</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -102,14 +102,28 @@
 
 <section>
   <a class="back-link" href="../index.html">← Back to blog</a>
-  <h2>Post 1 Title</h2>
+  <h2>Introduction to Linux kernel build configuration and modules</h2>
   <div class="date">2026-03-18</div>
 
-  <div class="content">
-    <p>
-      Write your post here.
-    </p>
-  </div>
+<div class="content">
+  <p>
+    <h3>Summary:</h3>
+    This post describes the tutorial on Linux kernel build configuration and modules. The tutorial introduces the basic idea of kernel modules, then guides the reader through creating a simple example module, adding the corresponding <code>Kconfig</code> and <code>Makefile</code> entries, enabling the new symbol through kernel configuration, rebuilding the kernel and modules, installing those modules into the ARM64 virtual machine, and testing them from inside the guest system. 
+  </p>
+
+  <p>
+    It also explains how module loading works in practice with commands such as <code>modinfo</code>, <code>insmod</code>, <code>rmmod</code>, and <code>modprobe</code>, and closes by showing a simple example of dependencies between kernel features by exporting a symbol from one module and rebuilding only a subset of the tree. The tutorial includes both <code>kw</code>-based and non-<code>kw</code> workflows, but I followed the version of the instructions that uses <code>kw</code>. 
+  </p>
+
+  <p>
+    <h3>My experience:</h3>
+    Everything worked smoothly. I followed the version of the instructions that uses <code>kw</code>, and overall the workflow was straightforward from configuration to building, installing, and testing the module.
+  </p>
+
+  <p>
+    The only small adjustment I had to make was using <code>kw build --menu</code> instead of <code>make -C "$IIO_TREE" menuconfig</code> when opening the kernel configuration interface. Aside from that, the steps worked as expected.
+  </p>
+</div>
 </section>
 
 </body>

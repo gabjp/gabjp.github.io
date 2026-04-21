@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Building and booting a custom Linux kernel for ARM (using kw)</title>
+  <title>IIO Dummy module Experiment One: Play with iio_dummy</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -102,27 +102,28 @@
 
 <section>
   <a class="back-link" href="../index.html">← Back to blog</a>
-  <h2>Building and booting a custom Linux kernel for ARM (using kw)</h2>
-  <div class="date">2026-03-18</div>
+  <h2>IIO Dummy module Experiment One: Play with iio_dummy</h2>
+  <div class="date">2026-04-01</div>
 
 <div class="content">
-  <h3>Summary</h3>
   <p>
-    This post describes my experience following the second tutorial in the Linux kernel development series from FLUSP. The tutorial walks through how to build and boot a custom Linux kernel for an ARM64 virtual machine using <code>kw</code> (<em>kworkflow</em>) to streamline the process. In practice, it covers installing <code>kw</code>, cloning the IIO kernel tree, configuring a local <code>kw</code> context for the VM, preparing a lean kernel <code>.config</code>, cross-compiling the kernel for ARM64, deploying modules to the VM, and finally booting the VM with the newly built kernel.
+    <h3>Summary:</h3>
+    This post describes a first hands-on experiment with the <code>iio_dummy</code> driver in the Linux Industrial I/O subsystem. The tutorial guides the reader through enabling the dummy driver in the kernel configuration, compiling it as a module, installing it inside the virtual machine, loading it with <code>modprobe</code>, and inspecting the resulting entries under <code>/sys/bus/iio/devices</code>. It then shows how to use <code>configfs</code> to create a dummy IIO device and observe how that device appears in sysfs with its associated attributes.
   </p>
 
-  <h3>My Experience</h3>
-<p>
-  Installing <code>kw</code> was the first part where I had trouble. One of its dependencies could not be installed on my system, so I had to remove <code>b4</code> from the Debian dependencies used by <code>kw</code>. After that adjustment, the installation worked. However, <code>kw</code> was still not being added to the <code>PATH</code> variable automatically. To fix that, I added the following lines to the <code>activate.sh</code> script:
-  <code>export KW_DIR="${LK_DEV_DIR}/kw"</code> and
-  <code>export PATH="$PATH:$KW_DIR"</code>. That solved the issue. Cloning the IIO tree worked well, and configuring <code>kw</code> for the local kernel tree and ARM64 target also went smoothly.
-</p>
+  <p>
+    The tutorial also explores the interface exposed by the created dummy device, including example attributes such as raw voltage and acceleration readings, and concludes with a small modification exercise that adds channels for a 3-axis compass. A particularly useful part of the tutorial is the section on the “Busy Device Issue,” which explains why unloading the module can fail when the dummy device created through <code>configfs</code> is still present, and how removing that directory allows the module to be unloaded correctly.
+  </p>
 
   <p>
-    The main issue appeared after compiling the custom kernel and trying to boot it in the VM. For some reason, once the VM loaded the custom kernel, I could no longer interact with it properly through the terminal console: input and output there were not working as expected. Fortunately, SSH access to the VM was still working, so I continued interacting with the guest through SSH instead. That allowed me to keep testing the environment, deploy modules, and verify the custom kernel even though the direct terminal console was not behaving correctly.
+    <h3>My experience:</h3>
+    Everything went smoothly overall. The only thing I needed to do differently was install <code>make</code> inside the VM before following the build steps. Aside from that, the process worked as expected.
+  </p>
+
+  <p>
+    The section about the Busy Device issue was especially helpful. The other small problems I ran into were just caused by reading mistakes on my side and were not important to the workflow itself.
   </p>
 </div>
-</section>
 
 </body>
 </html>
