@@ -126,6 +126,10 @@
     .back-link:hover {
       text-decoration: underline;
     }
+
+    .email-quote {
+      white-space: pre-wrap;
+    }
   </style>
 </head>
 
@@ -218,6 +222,28 @@
     <p>
       Overall, this was a good first experience with a real kernel cleanup patch: understand the local coding pattern, make a targeted change, verify that it builds, send it through the expected workflow, and learn from the feedback that comes back.
     </p>
+
+    <h3>Update 2026-05-13</h3>
+
+    <p>
+      On April 26th, we received an email frmo Mark Brown confirming that our patch has been accepted:
+    </p>
+
+    <blockquote class="email-quote">Applied to
+
+https://git.kernel.org/pub/scm/linux/kernel/git/broonie/sound.git for-7.2
+
+Thanks!
+
+[1/1] Change manual bitfield manipulation to use FIELD_PREP()
+   https://git.kernel.org/broonie/sound/c/ae93afff9818
+
+All being well this means that it will be integrated into the linux-next tree (usually sometime in the next 24 hours) and sent to Linus during the next merge window (or sooner if it is a bug fix), however if problems are discovered then the patch may be dropped or reverted.</blockquote>
+
+<p>
+  The link for the lore can be found <a href="https://lore.kernel.org/linux-sound/16ac8986-3d21-4f6e-886c-afdc0709ea8f@sirena.org.uk/T/#t">here</a>.
+</p>
+
   </div>
 </section>
 
