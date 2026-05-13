@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Arkanjo Contribution 1</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <style>
+    body {
+      margin: 0;
+      font-family: "IBM Plex Sans", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      color: #111;
+      line-height: 1.6;
+      background: #f5f5f5;
+    }
+
+    header {
+      background: #000;
+    }
+
+    .header-inner {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 14px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .name {
+      font-weight: 600;
+      color: #fff;
+      text-decoration: none;
+    }
+
+    nav a {
+      margin-left: 16px;
+      text-decoration: none;
+      color: #eaeaea;
+      font-size: 0.95rem;
+    }
+
+    nav a:hover {
+      text-decoration: underline;
+      color: #ffffff;
+    }
+
+    section {
+      max-width: 900px;
+      margin: 60px auto;
+      padding: 0 20px;
+    }
+
+    h2 {
+      margin-bottom: 10px;
+      border-bottom: 1px solid #ddd;
+      padding-bottom: 6px;
+      font-size: 1.25rem;
+    }
+
+    h3 {
+      margin-top: 28px;
+      margin-bottom: 10px;
+      font-size: 1.05rem;
+    }
+
+    .date {
+      font-family: monospace;
+      color: #666;
+      margin-bottom: 20px;
+    }
+
+    .content p {
+      text-align: justify;
+      text-justify: inter-word;
+      hyphens: auto;
+      margin-top: 0;
+      margin-bottom: 12px;
+    }
+
+    .content code {
+      font-family: "IBM Plex Mono", "SFMono-Regular", Consolas, monospace;
+      padding: 0.12rem 0.3rem;
+      border-radius: 4px;
+      font-size: 0.95em;
+    }
+
+    pre {
+      background: #111;
+      color: #f0f0f0;
+      padding: 14px 16px;
+      border-radius: 8px;
+      overflow-x: auto;
+      margin: 14px 0 18px 0;
+      line-height: 1.45;
+      border: 1px solid #ddd;
+    }
+
+    pre code {
+      #background: transparent;
+      padding: 0;
+      color: inherit;
+      border-radius: 0;
+      font-size: 0.95rem;
+    }
+
+    blockquote {
+      margin: 16px 0;
+      padding: 10px 16px;
+      border-left: 4px solid #bbb;
+      background: #efefef;
+      color: #222;
+    }
+
+    .back-link {
+      display: inline-block;
+      margin-bottom: 18px;
+      color: #111;
+      text-decoration: none;
+    }
+
+    .back-link:hover {
+      text-decoration: underline;
+    }
+
+    .email-quote {
+      white-space: pre-wrap;
+    }
+  </style>
+</head>
+
+<body>
+
+<header>
+  <div class="header-inner">
+    <a href="https://gabjp.github.io/" class="name">Gabriel Jacob Perin</a>
+    <nav>
+      <a href="../index.html#about">About</a>
+      <a href="../index.html#posts">Posts</a>
+    </nav>
+  </div>
+</header>
+
+<section>
+  <a class="back-link" href="../index.html">← Back to blog</a>
+  <h2>Arkanjo Contribution 1</h2>
+  <div class="date">2026-05-13</div>
+
+  <div class="content">
+   
+        <h3>Summary</h3>
+
+    <p>
+      In this post, I describe my first experience installing and building
+      <a href="https://github.com/arkanjo-tool/arkanjo/tree/main">ArKanjo</a>, a command-line tool for detecting function-level code duplication.
+      The tool is particularly interesting in the context of Linux kernel development, since duplicated code in large systems is not always trivial to identify, evaluate, or refactor.
+    </p>
+
+    <p>
+      ArKanjo is also described in the paper
+      <a href="https://hal.science/hal-05335545v1/document">
+        ArKanjo: a tool for detecting function-level Code Duplication in the Linux Kernel
+      </a>.
+      The paper frames the tool as a way to support kernel maintenance by finding actionable duplicated functions, while also showing that duplication in the kernel must be interpreted carefully: sometimes it is a real maintenance problem, but sometimes it reflects design, readability, or subsystem-specific constraints.
+    </p>
+
+    <h3>Installation experience</h3>
+
+    <p>
+      I followed the installation instructions from the official repository. The process was mostly straightforward, but I had to solve a few environment-related issues before completing the build.
+    </p>
+
+    <p>
+      I first installed CMake through the Ubuntu package manager:
+    </p>
+
+    <pre><code>sudo apt install cmake</code></pre>
+
+    <p>
+      However, when running the configuration step with <code>cmake ..</code>, I ran into problems related to missing development tools. I installed both <code>clang-tidy</code> and <code>clang-format</code>:
+    </p>
+
+    <pre><code>sudo apt install clang-tidy
+sudo apt install clang-format</code></pre>
+
+    <p>
+      After that, I still had another issue: the CMake version installed through <code>apt</code> was 3.16.3, which was not enough for the project configuration step. I removed the system package and installed a newer version through Python:
+    </p>
+
+    <pre><code>sudo apt remove cmake
+pip install --upgrade cmake</code></pre>
+
+    <p>
+      The shell was still trying to call the old binary path at <code>/usr/bin/cmake</code>. Since the new CMake binary was installed inside my Anaconda environment, I called it directly:
+    </p>
+
+    <pre><code>/home/gjperin/anaconda3/bin/cmake ..</code></pre>
+
+    <p>
+      With the newer CMake version, the configuration step completed successfully. ArKanjo cloned the required Tree-sitter parsers for C and Rust and generated the build files.
+    </p>
+
+    <h3>Fixing a missing dependency</h3>
+
+    <p>
+      The next issue appeared during compilation. The build failed while compiling Tree-sitter because the ICU development headers were missing:
+    </p>
+
+    <pre><code>fatal error: unicode/umachine.h: Arquivo ou diretório inexistente</code></pre>
+
+    <p>
+      The fix was to install the ICU development package:
+    </p>
+
+    <pre><code>sudo apt install libicu-dev</code></pre>
+
+    <p>
+      After installing this dependency, I reran the build command and the project compiled successfully:
+    </p>
+
+    <pre><code>/home/gjperin/anaconda3/bin/cmake --build .</code></pre>
+
+    <p>
+      The build produced the main <code>arkanjo</code> executable, the <code>arkanjo-preprocessor</code> executable, and the test binary. There were some compiler warnings, but they did not prevent the build from completing.
+    </p>
+
+    <h3>Installing the tool</h3>
+
+    <p>
+      My first installation attempt failed because CMake tried to copy the binaries into <code>/usr/local/bin</code>, which requires administrator permission:
+    </p>
+
+    <pre><code>file INSTALL cannot copy file ".../build/arkanjo"
+to "/usr/local/bin/arkanjo": Permission denied.</code></pre>
+
+    <p>
+      Running the installation step with <code>sudo</code> solved the problem:
+    </p>
+
+    <pre><code>sudo /home/gjperin/anaconda3/bin/cmake --install .</code></pre>
+
+    <p>
+      This installed both <code>arkanjo</code> and <code>arkanjo-preprocessor</code> under <code>/usr/local/bin</code>, together with the required third-party files under <code>/usr/local/lib/arkanjo</code>.
+    </p>
+
+    <h3>Takeaways</h3>
+
+    <p>
+      This first step was useful mainly as a setup and environment exercise. The practical lessons were: ArKanjo currently benefits from a recent CMake version; the configuration step expects some development tools such as <code>clang-tidy</code> and <code>clang-format</code>; and the Tree-sitter dependency requires ICU development headers to be available in the system.
+    </p>
+
+    <p>
+      From a kernel-contribution perspective, ArKanjo is interesting because it connects directly with the kind of work I have been exploring in previous posts: using tooling to identify small, concrete maintenance opportunities in a large codebase. The important point is that duplicated code should not be treated mechanically. As emphasized by the ArKanjo work, the kernel has many cases where local context matters, and a useful tool should help developers inspect candidates rather than blindly remove duplication.
+    </p>
+  
+  </div>
+</section>
+
+</body>
+</html>
