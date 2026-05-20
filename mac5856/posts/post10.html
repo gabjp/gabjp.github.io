@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Arkanjo Contribution Report 2</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <style>
+    body {
+      margin: 0;
+      font-family: "IBM Plex Sans", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      color: #111;
+      line-height: 1.6;
+      background: #f5f5f5;
+    }
+
+    header {
+      background: #000;
+    }
+
+    .header-inner {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 14px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .name {
+      font-weight: 600;
+      color: #fff;
+      text-decoration: none;
+    }
+
+    nav a {
+      margin-left: 16px;
+      text-decoration: none;
+      color: #eaeaea;
+      font-size: 0.95rem;
+    }
+
+    nav a:hover {
+      text-decoration: underline;
+      color: #ffffff;
+    }
+
+    section {
+      max-width: 900px;
+      margin: 60px auto;
+      padding: 0 20px;
+    }
+
+    h2 {
+      margin-bottom: 10px;
+      border-bottom: 1px solid #ddd;
+      padding-bottom: 6px;
+      font-size: 1.25rem;
+    }
+
+    h3 {
+      margin-top: 28px;
+      margin-bottom: 10px;
+      font-size: 1.05rem;
+    }
+
+    .date {
+      font-family: monospace;
+      color: #666;
+      margin-bottom: 20px;
+    }
+
+    .content p {
+      text-align: justify;
+      text-justify: inter-word;
+      hyphens: auto;
+      margin-top: 0;
+      margin-bottom: 12px;
+    }
+
+    .content code {
+      font-family: "IBM Plex Mono", "SFMono-Regular", Consolas, monospace;
+      padding: 0.12rem 0.3rem;
+      border-radius: 4px;
+      font-size: 0.95em;
+    }
+
+    pre {
+      background: #111;
+      color: #f0f0f0;
+      padding: 14px 16px;
+      border-radius: 8px;
+      overflow-x: auto;
+      margin: 14px 0 18px 0;
+      line-height: 1.45;
+      border: 1px solid #ddd;
+    }
+
+    pre code {
+      background: transparent;
+      padding: 0;
+      color: inherit;
+      border-radius: 0;
+      font-size: 0.95rem;
+    }
+
+    blockquote {
+      margin: 16px 0;
+      padding: 10px 16px;
+      border-left: 4px solid #bbb;
+      background: #efefef;
+      color: #222;
+    }
+
+    .back-link {
+      display: inline-block;
+      margin-bottom: 18px;
+      color: #111;
+      text-decoration: none;
+    }
+
+    .back-link:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+
+<body>
+
+<header>
+  <div class="header-inner">
+    <a href="https://gabjp.github.io/" class="name">Gabriel Jacob Perin</a>
+    <nav>
+      <a href="../index.html#about">About</a>
+      <a href="../index.html#posts">Posts</a>
+    </nav>
+  </div>
+</header>
+
+<section>
+  <a class="back-link" href="../index.html">← Back to blog</a>
+  <h2>Arkanjo Contribution Report 2</h2>
+  <div class="date">2026-05-20</div>
+
+  <div class="content">
+
+    <h3>Summary</h3>
+
+    <p>
+      In the previous post, we described the first steps for installing and building
+      <a href="https://github.com/arkanjo-tool/arkanjo/tree/main">ArKanjo</a>.
+      Today, we continued working on the project by forking the repository, fixing an installation/build issue, and starting to explore how the codebase could be extended with an embedding-based duplicate detection method.
+    </p>
+
+    <p>
+      The main practical result of the day was a small installation fix related to pthread linkage. After that, we started experimenting with a transformer encoder model for code embeddings. The long-term goal is to implement a flexible ArKanjo method that computes embeddings for functions and uses cosine similarity to identify possible duplicates.
+    </p>
+
+    <h3>Forking the repository</h3>
+
+    <p>
+      We started by working on our fork of the ArKanjo repository. The idea was to keep installation fixes and experimental method development separated into different branches, so that small infrastructure changes can be proposed independently from larger feature work.
+    </p>
+
+    <p>
+      For the installation fix, we used a branch called <code>fix-install</code>. After committing the changes, we pushed the branch to our fork:
+    </p>
+
+    <pre><code>git push --set-upstream origin fix-install</code></pre>
+
+    <p>
+      This created the remote branch and made it possible to open a pull request from the fork. After that, we switched to a separate development branch for the new method:
+    </p>
+
+    <pre><code>git switch feature/llm-method
+git pull</code></pre>
+
+    <p>
+      This separation is useful because the pthread fix is a small build-system contribution, while the embedding-based duplicate detection method is a larger exploratory feature.
+    </p>
+
+    <h3>Fixing the pthread build issue</h3>
+
+    <p>
+      While rebuilding ArKanjo, the compilation step succeeded, but the final link step failed with undefined references to <code>pthread_create</code>:
+    </p>
+
+    <pre><code>/usr/bin/ld: libcore_methods.a(ast_method.cpp.o): undefined reference to "pthread_create"
+collect2: error: ld returned 1 exit status</code></pre>
+
+    <p>
+      This was not a CMake version problem. The error happened at link time because the code in <code>ast_method.cpp</code> uses pthreads, but the final executable was not being linked against the POSIX threads library.
+    </p>
+
+    <p>
+      The clean CMake fix was to use CMake's standard thread package instead of manually adding linker flags. In the top-level <code>CMakeLists.txt</code>, we added:
+    </p>
+
+    <pre><code>set(THREADS_PREFER_PTHREAD_FLAG ON)
+find_package(Threads REQUIRED)</code></pre>
+
+    <p>
+      Then, in <code>cmake/Targets.cmake</code>, we updated the <code>core_methods</code> target to link against <code>Threads::Threads</code>. Since <code>core_methods</code> is a static library and the pthread call is inside it, the dependency should be propagated to targets that link against it:
+    </p>
+
+    <pre><code>target_link_libraries(core_methods
+    PUBLIC
+    core_base
+    ${PARSER_LIBS}
+    tree_sitter_core
+    Threads::Threads
+)</code></pre>
+
+    <p>
+      Using <code>Threads::Threads</code> is preferable to manually adding <code>-lpthread</code> or <code>-pthread</code>, because it lets CMake choose the correct compiler and linker flags for the platform.
+    </p>
+
+    <h3>Updating the README</h3>
+
+    <p>
+      We also added the explicit build command to the installation instructions in the README:
+    </p>
+
+    <pre><code>cmake --build .</code></pre>
+
+    <p>
+      This makes the installation procedure clearer for new users. After configuring the project with CMake, the user now has a direct command showing how to actually build the generated target files.
+    </p>
+
+    <h3>Plan for a new embedding-based method</h3>
+
+    <p>
+      After fixing the build issue, we started exploring the codebase with the goal of adding a new duplicate detection method based on language-model embeddings.
+    </p>
+
+    <p>
+      The idea is to implement a flexible method that receives source code snippets, computes vector embeddings with a transformer encoder, and compares functions using cosine similarity. The first model we are experimenting with is
+      <a href="https://huggingface.co/jinaai/jina-embeddings-v2-base-code">
+        jinaai/jina-embeddings-v2-base-code
+      </a>,
+      but the final implementation should not hard-code this model. Instead, the exact embedding model should be configurable by the user.
+    </p>
+
+    <p>
+      Conceptually, the method should follow a simple pipeline:
+    </p>
+
+    <pre><code>function source code
+        ↓
+transformer encoder
+        ↓
+embedding vector
+        ↓
+cosine similarity
+        ↓
+duplicate / not duplicate decision</code></pre>
+
+    <p>
+      This is different from purely syntactic duplicate detection. Instead of comparing only tokens, trees, or handcrafted features, the method uses a pretrained model to place pieces of code in a semantic vector space. The hope is that functions with similar behavior will have nearby embeddings, even when variable names or surface syntax differ.
+    </p>
+
+    <h3>Setting up a CPU environment</h3>
+
+    <p>
+      Before integrating anything into ArKanjo, we created a small isolated environment to test the embedding model on CPU:
+    </p>
+
+    <pre><code>conda create -n jina-cpu python=3.10 -y
+conda activate jina-cpu
+pip install --upgrade pip</code></pre>
+
+    <p>
+      We installed the CPU version of PyTorch:
+    </p>
+
+    <pre><code>pip install torch --index-url https://download.pytorch.org/whl/cpu</code></pre>
+
+    <p>
+      Then we installed the Hugging Face dependencies:
+    </p>
+
+    <pre><code>pip install transformers sentence-transformers accelerate</code></pre>
+
+    <p>
+      The first attempt installed a newer <code>transformers</code> version that was incompatible with the remote model code used by the Jina model. The error was:
+    </p>
+
+    <pre><code>ImportError: cannot import name 'find_pruneable_heads_and_indices'
+from 'transformers.pytorch_utils'</code></pre>
+
+    <p>
+      We fixed this by uninstalling the packages and installing a <code>transformers</code> version below 5:
+    </p>
+
+    <pre><code>pip uninstall -y transformers sentence-transformers
+pip install "transformers&lt;5" "sentence-transformers&gt;=2.3.0" accelerate</code></pre>
+
+    <p>
+      After that, the model loaded correctly on CPU and we were able to run small embedding experiments.
+    </p>
+
+    <h3>First embedding experiment</h3>
+
+    <p>
+      To get an initial feeling for the model, we wrote a small script that computes embeddings for pairs of simple code snippets, compares them with cosine similarity, and evaluates a threshold-based duplicate classifier.
+    </p>
+
+    <pre><code>from transformers import AutoModel
+from numpy.linalg import norm
+
+
+def cos_sim(a, b):
+    return (a @ b.T) / (norm(a) * norm(b))
+
+
+def compute_accuracy(model, examples, threshold):
+    correct = 0
+
+    print(f"Using threshold = {threshold}\n")
+
+    for i, (code_a, code_b, is_duplicate) in enumerate(examples, start=1):
+        embeddings = model.encode([code_a, code_b])
+        score = cos_sim(embeddings[0], embeddings[1])
+
+        pred = score &gt;= threshold
+        is_correct = pred == is_duplicate
+        correct += int(is_correct)
+
+        print(f"Example {i:02d}")
+        print(f"Cosine score: {score:.4f}")
+        print(f"Prediction:   {'duplicate' if pred else 'not duplicate'}")
+        print(f"Gold label:   {'duplicate' if is_duplicate else 'not duplicate'}")
+        print(f"Result:       {'OK' if is_correct else 'WRONG'}")
+        print("-" * 60)
+
+    accuracy = correct / len(examples)
+
+    print(f"\nFinal accuracy @ threshold={threshold}: {accuracy:.2%}")
+    print(f"Correct: {correct}/{len(examples)}")
+
+    return accuracy
+
+
+def main():
+    model_name = "jinaai/jina-embeddings-v2-base-code"
+    threshold = 0.7
+
+    print(f"Loading model: {model_name}")
+    model = AutoModel.from_pretrained(
+        model_name,
+        trust_remote_code=True,
+    )
+
+    examples = [
+        # Duplicate: same code
+        (
+            "def add(a, b):\n"
+            "    return a + b",
+
+            "def add(a, b):\n"
+            "    return a + b",
+
+            True,
+        ),
+
+        # Duplicate: same behavior, different names
+        (
+            "def add(a, b):\n"
+            "    return a + b",
+
+            "def sum_two(x, y):\n"
+            "    return x + y",
+
+            True,
+        ),
+
+        # Not duplicate: similar structure, different operation
+        (
+            "def add(a, b):\n"
+            "    return a + b",
+
+            "def multiply(a, b):\n"
+            "    return a * b",
+
+            False,
+        ),
+
+        # Duplicate: even check, different style
+        (
+            "def is_even(x):\n"
+            "    return x % 2 == 0",
+
+            "def check_even(n):\n"
+            "    if n % 2 == 0:\n"
+            "        return True\n"
+            "    return False",
+
+            True,
+        ),
+
+        # Not duplicate: opposite behavior
+        (
+            "def is_even(x):\n"
+            "    return x % 2 == 0",
+
+            "def is_odd(x):\n"
+            "    return x % 2 != 0",
+
+            False,
+        ),
+
+        # Duplicate: same loop behavior
+        (
+            "def print_items(xs):\n"
+            "    for x in xs:\n"
+            "        print(x)",
+
+            "def show_values(values):\n"
+            "    for value in values:\n"
+            "        print(value)",
+
+            True,
+        ),
+
+        # Not duplicate: both use a list, but different behavior
+        (
+            "def print_items(xs):\n"
+            "    for x in xs:\n"
+            "        print(x)",
+
+            "def count_items(xs):\n"
+            "    return len(xs)",
+
+            False,
+        ),
+
+        # Duplicate: same max behavior
+        (
+            "def get_max(xs):\n"
+            "    return max(xs)",
+
+            "def largest(values):\n"
+            "    return max(values)",
+
+            True,
+        ),
+
+        # Not duplicate: max vs min
+        (
+            "def get_max(xs):\n"
+            "    return max(xs)",
+
+            "def get_min(xs):\n"
+            "    return min(xs)",
+
+            False,
+        ),
+
+        # Duplicate: same sum behavior
+        (
+            "def sum_list(xs):\n"
+            "    total = 0\n"
+            "    for x in xs:\n"
+            "        total += x\n"
+            "    return total",
+
+            "def add_all(values):\n"
+            "    result = 0\n"
+            "    for value in values:\n"
+            "        result = result + value\n"
+            "    return result",
+
+            True,
+        ),
+
+        # Not duplicate: sum vs product
+        (
+            "def sum_list(xs):\n"
+            "    total = 0\n"
+            "    for x in xs:\n"
+            "        total += x\n"
+            "    return total",
+
+            "def product_list(xs):\n"
+            "    result = 1\n"
+            "    for x in xs:\n"
+            "        result *= x\n"
+            "    return result",
+
+            False,
+        ),
+    ]
+
+    compute_accuracy(model, examples, threshold)
+
+
+if __name__ == "__main__":
+    main()</code></pre>
+
+    <p>
+      This script is intentionally simple. It is not meant to be a serious benchmark yet. The goal is only to check whether the model can produce reasonable similarities for very small duplicate and non-duplicate examples.
+    </p>
+
+    <h3>Initial observations</h3>
+
+    <p>
+      The first experiments already showed an important challenge: choosing a threshold is not trivial. Some examples that are clearly duplicates receive lower similarity than expected, while some non-duplicates can receive relatively high similarity because their syntax and structure are similar.
+    </p>
+
+    <p>
+      For example, functions such as <code>is_even</code> and <code>is_odd</code> look very similar syntactically, but their behavior is different. This kind of case is important because it can become a false positive for an embedding-only duplicate detector.
+    </p>
+
+    <p>
+      On the other hand, functions that implement the same behavior with different names or slightly different control flow can still be close in embedding space. This suggests that the approach is worth exploring, but it will need careful calibration and evaluation.
+    </p>
+
+    <h3>Next steps</h3>
+
+    <p>
+      The next step is to understand where this method should fit inside ArKanjo's architecture. The current plan is to implement a new flexible method that can call an external or configurable embedding model, compute function-level embeddings, and compare candidate pairs using cosine similarity.
+    </p>
+
+    <p>
+      The method should expose at least two user-facing choices: the embedding model name and the similarity threshold. Starting with <code>jinaai/jina-embeddings-v2-base-code</code> is useful for prototyping, but the implementation should allow other encoder models to be used without changing the C++ method logic.
+    </p>
+
+    <p>
+      More broadly, this contribution explores whether modern pretrained code embeddings can complement ArKanjo's existing duplicate detection strategies. The goal is not to replace the current methods immediately, but to add an experimental path for semantic duplicate detection and then evaluate how useful it is on realistic code examples.
+    </p>
+
+  </div>
+</section>
+
+</body>
+</html>
