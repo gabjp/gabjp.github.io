@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Arkanjo Contribution Report 3</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <style>
+    body {
+      margin: 0;
+      font-family: "IBM Plex Sans", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      color: #111;
+      line-height: 1.6;
+      background: #f5f5f5;
+    }
+
+    header {
+      background: #000;
+    }
+
+    .header-inner {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 14px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .name {
+      font-weight: 600;
+      color: #fff;
+      text-decoration: none;
+    }
+
+    nav a {
+      margin-left: 16px;
+      text-decoration: none;
+      color: #eaeaea;
+      font-size: 0.95rem;
+    }
+
+    nav a:hover {
+      text-decoration: underline;
+      color: #ffffff;
+    }
+
+    section {
+      max-width: 900px;
+      margin: 60px auto;
+      padding: 0 20px;
+    }
+
+    h2 {
+      margin-bottom: 10px;
+      border-bottom: 1px solid #ddd;
+      padding-bottom: 6px;
+      font-size: 1.25rem;
+    }
+
+    h3 {
+      margin-top: 28px;
+      margin-bottom: 10px;
+      font-size: 1.05rem;
+    }
+
+    .date {
+      font-family: monospace;
+      color: #666;
+      margin-bottom: 20px;
+    }
+
+    .content p {
+      text-align: justify;
+      text-justify: inter-word;
+      hyphens: auto;
+      margin-top: 0;
+      margin-bottom: 12px;
+    }
+
+    .content code {
+      font-family: "IBM Plex Mono", "SFMono-Regular", Consolas, monospace;
+      padding: 0.12rem 0.3rem;
+      border-radius: 4px;
+      font-size: 0.95em;
+    }
+
+    pre {
+      background: #111;
+      color: #f0f0f0;
+      padding: 14px 16px;
+      border-radius: 8px;
+      overflow-x: auto;
+      margin: 14px 0 18px 0;
+      line-height: 1.45;
+      border: 1px solid #ddd;
+    }
+
+    pre code {
+      background: transparent;
+      padding: 0;
+      color: inherit;
+      border-radius: 0;
+      font-size: 0.95rem;
+    }
+
+    blockquote {
+      margin: 16px 0;
+      padding: 10px 16px;
+      border-left: 4px solid #bbb;
+      background: #efefef;
+      color: #222;
+    }
+
+    figure {
+      margin: 22px 0;
+      padding: 0;
+    }
+
+    figure img {
+      width: 100%;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      background: #fff;
+    }
+
+    figcaption {
+      margin-top: 8px;
+      color: #555;
+      font-size: 0.92rem;
+      text-align: center;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0 20px 0;
+      background: #fff;
+    }
+
+    th, td {
+      border: 1px solid #ddd;
+      padding: 8px 10px;
+      text-align: left;
+    }
+
+    th {
+      background: #eee;
+      font-weight: 600;
+    }
+
+    .back-link {
+      display: inline-block;
+      margin-bottom: 18px;
+      color: #111;
+      text-decoration: none;
+    }
+
+    .back-link:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+
+<body>
+
+<header>
+  <div class="header-inner">
+    <a href="https://gabjp.github.io/" class="name">Gabriel Jacob Perin</a>
+    <nav>
+      <a href="../index.html#about">About</a>
+      <a href="../index.html#posts">Posts</a>
+    </nav>
+  </div>
+</header>
+
+<section>
+  <a class="back-link" href="../index.html">← Back to blog</a>
+  <h2>Arkanjo Contribution Report 3</h2>
+  <div class="date">2026-06-09</div>
+
+  <div class="content">
+
+    <h3>Summary</h3>
+
+    <p>
+      In the previous posts, we described the process of building
+      <a href="https://github.com/arkanjo-tool/arkanjo/tree/main">ArKanjo</a>, fixing a small installation issue, and planning a new duplicate detection method based on language-model embeddings. In this final report, we describe the implementation of that method in the ArKanjo codebase and compare it with the methods that were already available in the tool.
+    </p>
+
+    <p>
+      The new method computes embeddings for pieces of source code using a pretrained code model and then compares pairs of files with cosine similarity. We continue using
+      <a href="https://huggingface.co/jinaai/jina-embeddings-v2-base-code"><code>jinaai/jina-embeddings-v2-base-code</code></a>
+      as the default model because it is small enough to run in our experimental setup while still being specialized for code. However, the implementation does not hard-code this choice: model name, batch size, maximum sequence length, and threshold-related options are exposed as configuration parameters so users can adapt the method to their own hardware and use cases.
+    </p>
+
+    <blockquote>
+      TODO: add the final pull request link, branch name, or commit hash here.
+    </blockquote>
+
+    <h3>Implementing the embedding method</h3>
+
+    <p>
+      The main implementation step was to connect the embedding pipeline to ArKanjo's duplicate detection workflow. Given a collection of source files, the method reads each file, sends the code to a transformer encoder, obtains one vector representation per file, and compares all candidate pairs using cosine similarity. A pair is then classified as duplicate when its similarity is above a chosen threshold.
+    </p>
+
+    <p>
+      During implementation, two practical issues were especially important. First, the batch size has a direct impact on memory usage. Larger batches are faster, but they can cause out-of-memory errors depending on the available GPU or CPU memory. Second, the maximum sequence length also affects memory consumption, because long source files produce longer token sequences. For this reason, both <code>batch_size</code> and <code>MAX_SEQ_LENGTH</code> are configurable instead of fixed inside the code.
+    </p>
+
+    <p>
+      We also kept the model choice configurable. Although <code>jinaai/jina-embeddings-v2-base-code</code> was the model used in these experiments, users may want to try larger models, newer code embedding models, or local models better suited to their programming language. Exposing these options makes the contribution more flexible and avoids tying ArKanjo to a single embedding backend.
+    </p>
+
+    <h3>File-level granularity</h3>
+
+    <p>
+      To run this evaluation, we also implemented a new granularity mode. Previously, the codebase focused on comparing functions extracted from files. For the POJ-104 experiment, however, each example is a complete competitive programming solution. Therefore, we added support for comparing files directly against files, without first splitting them into functions.
+    </p>
+
+    <p>
+      This mode is useful for datasets where each file corresponds to one complete solution or program. In this setting, the duplicate detection problem becomes: given two source files, decide whether they solve the same problem.
+    </p>
+
+    <h3>Evaluation dataset</h3>
+
+    <p>
+      For the comparison, we used the
+      <a href="https://github.com/microsoft/CodeXGLUE/tree/main/Code-Code/Clone-detection-POJ-104">POJ-104 dataset</a>, a commonly used benchmark for code clone detection. In the CodeXGLUE formulation, each program has a label corresponding to the problem it solves, and the goal is to retrieve or identify code with the same semantics.
+    </p>
+
+    <p>
+      Our evaluation is a smaller threshold-based experiment rather than the full CodeXGLUE retrieval benchmark. We randomly sampled 30 problems and 10 examples from each problem, resulting in 300 code files. We then considered two files to be clones when they solve the same problem. This gives a simple binary duplicate detection setup: pairs from the same problem are positive examples, while pairs from different problems are negative examples.
+    </p>
+
+    <blockquote>
+      TODO: add the random seed and exact preprocessing command here, if you want the experiment to be fully reproducible.
+    </blockquote>
+
+    <h3>Compared methods</h3>
+
+    <p>
+      We compared the new embedding-based method with three previously implemented ArKanjo methods:
+    </p>
+
+    <p>
+      <strong>Diff.</strong> This method compares source files using textual differences. It is useful for detecting near-identical code or code with small edits, but it is expected to struggle when two solutions implement the same algorithm with different structure, naming, or formatting.
+    </p>
+
+    <p>
+      <strong>NLP text similarity.</strong> This method treats code mostly as text and compares textual representations of the files. It can capture more similarity than a strict diff in some cases, but it is still strongly affected by surface-level lexical overlap.
+    </p>
+
+    <p>
+      <strong>AST.</strong> This method uses the abstract syntax tree representation of the code. Since the AST captures syntactic structure, it can be more robust than raw text comparison when formatting and names change. However, it is still mainly a structural method, not a semantic model of program behavior.
+    </p>
+
+    <p>
+      <strong>LM embeddings.</strong> This is the new method implemented in this contribution. It uses a pretrained code embedding model to map each file to a vector, then compares vectors with cosine similarity. The goal is to capture semantic similarity beyond exact textual or syntactic overlap.
+    </p>
+
+    <h3>Results</h3>
+
+    <p>
+      The figure below summarizes the F-score curves for all four methods. The best threshold for each method is highlighted directly on the plot.
+    </p>
+
+    <figure>
+      <img src="fscore_curves.png" alt="F-score curves for LM embeddings, Diff, AST, and NLP text similarity.">
+      <figcaption>F-score as a function of the duplicate detection threshold for all compared methods.</figcaption>
+    </figure>
+
+    <p>
+      The embedding-based method achieved the best F-score among the evaluated methods. Its best result was an F-score of 0.609 at threshold 72. The AST method was the strongest non-embedding baseline, reaching an F-score of 0.331 at threshold 50. The NLP text similarity and Diff methods performed worse, with best F-scores of 0.182 and 0.109, respectively, both around threshold 18.
+    </p>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Method</th>
+          <th>Best threshold</th>
+          <th>Best F-score</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>LM embeddings (new)</td>
+          <td>72</td>
+          <td>0.609</td>
+        </tr>
+        <tr>
+          <td>AST</td>
+          <td>50</td>
+          <td>0.331</td>
+        </tr>
+        <tr>
+          <td>NLP text similarity</td>
+          <td>18</td>
+          <td>0.182</td>
+        </tr>
+        <tr>
+          <td>Diff</td>
+          <td>18</td>
+          <td>0.109</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p>
+      Looking at the individual precision, recall, F-score, and accuracy curves also helps explain the behavior of each method. The embedding method reaches a much better balance between precision and recall than the other approaches. Its F-score peaks when precision has already increased substantially while recall is still reasonably high.
+    </p>
+
+    <figure>
+      <img src="metrics_vs_threshold_llm.png" alt="Precision, recall, F1 score, and accuracy curves for the LM embedding method.">
+      <figcaption>Metrics for the new LM embedding method.</figcaption>
+    </figure>
+
+    <p>
+      The AST method also shows a meaningful precision-recall trade-off, but its peak F-score is lower. This suggests that syntactic structure is informative for this dataset, but not enough to fully capture the fact that independently written solutions can solve the same programming problem in different ways.
+    </p>
+
+    <figure>
+      <img src="metrics_vs_threshold_ast.png" alt="Precision, recall, F1 score, and accuracy curves for the AST method.">
+      <figcaption>Metrics for the AST method.</figcaption>
+    </figure>
+
+    <p>
+      The text-based baselines perform worse. The NLP text similarity method obtains high accuracy at high thresholds, but this is partly because the dataset is highly imbalanced at the pair level: there are many more non-clone pairs than clone pairs. Therefore, accuracy alone is not a reliable metric here. F-score is more informative because it takes both precision and recall into account.
+    </p>
+
+    <figure>
+      <img src="metrics_vs_threshold_nlp.png" alt="Precision, recall, F1 score, and accuracy curves for the NLP text similarity method.">
+      <figcaption>Metrics for the NLP text similarity method.</figcaption>
+    </figure>
+
+    <p>
+      Finally, the Diff method has the lowest peak F-score. This is expected for POJ-104: two files can solve the same problem while using different variable names, control flow, helper functions, or implementation strategies. In those cases, textual overlap is not enough to identify semantic clones reliably.
+    </p>
+
+    <figure>
+      <img src="metrics_vs_threshold_diff.png" alt="Precision, recall, F1 score, and accuracy curves for the Diff method.">
+      <figcaption>Metrics for the Diff method.</figcaption>
+    </figure>
+
+    <h3>Discussion</h3>
+
+    <p>
+      These results suggest that the embedding-based method is a useful addition to ArKanjo. On this sampled POJ-104 experiment, it substantially outperformed the existing methods in terms of F-score. This is consistent with the motivation behind the method: duplicate detection for competitive programming solutions often requires recognizing that two programs solve the same task, even when they do not look textually identical.
+    </p>
+
+    <p>
+      At the same time, the experiment also shows that threshold selection is important. A very low threshold gives high recall but many false positives, while a very high threshold gives high precision but misses many true clones. Since the best threshold depends on the dataset, the model, and the desired precision-recall trade-off, the threshold should remain a user-facing configuration option.
+    </p>
+
+    <p>
+      Another important observation is that accuracy can be misleading in this setting. Since most file pairs are not clones, a method can obtain high accuracy by predicting many pairs as non-duplicates. For that reason, F-score is a better summary metric for this evaluation, and precision-recall curves should be inspected before choosing a threshold.
+    </p>
+
+    <h3>Conclusion</h3>
+
+    <p>
+      In this final stage of the contribution, we implemented a new language-model embedding method for ArKanjo, added file-level comparison granularity, exposed the main model and inference parameters as user configurations, and evaluated the method against the existing Diff, NLP text similarity, and AST approaches.
+    </p>
+
+    <p>
+      The new method achieved the best F-score in our sampled POJ-104 evaluation, reaching 0.609 compared with 0.331 for AST, 0.182 for NLP text similarity, and 0.109 for Diff. While this is still a limited experiment, it provides evidence that pretrained code embeddings can complement ArKanjo's existing duplicate detection strategies, especially when the goal is to detect semantic similarity rather than only textual or syntactic overlap.
+    </p>
+
+    <p>
+      All implementation changes from this contribution have been submitted to the ArKanjo repository.
+    </p>
+
+    <blockquote>
+      TODO: replace this sentence with the merged pull request link or final repository link after publication.
+    </blockquote>
+
+  </div>
+</section>
+
+</body>
+</html>
