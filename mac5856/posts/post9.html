@@ -7,7 +7,9 @@
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <link href="https://cdn.jsdelivr.net/npm/prismjs/themes/prism-okaidia.min.css" rel="stylesheet" />
 
   <style>
     body {
@@ -69,7 +71,7 @@
     }
 
     .date {
-      font-family: monospace;
+      font-family: "IBM Plex Mono", "SFMono-Regular", Consolas, monospace;
       color: #666;
       margin-bottom: 20px;
     }
@@ -82,30 +84,122 @@
       margin-bottom: 12px;
     }
 
-    .content code {
+    /* Inline code */
+    .content :not(pre) > code {
       font-family: "IBM Plex Mono", "SFMono-Regular", Consolas, monospace;
-      padding: 0.12rem 0.3rem;
-      border-radius: 4px;
-      font-size: 0.95em;
+      background: #eaeaea;
+      color: #111;
+      padding: 0.15rem 0.35rem;
+      border-radius: 5px;
+      font-size: 0.9em;
+      border: 1px solid #d8d8d8;
     }
 
+    /* Code blocks */
+    pre[class*="language-"],
     pre {
-      background: #111;
+      background: #111 !important;
       color: #f0f0f0;
-      padding: 14px 16px;
-      border-radius: 8px;
-      overflow-x: auto;
-      margin: 14px 0 18px 0;
-      line-height: 1.45;
-      border: 1px solid #ddd;
+      padding: 16px 18px;
+      border-radius: 10px;
+      overflow: auto;
+      max-height: 360px;
+      margin: 18px 0 22px 0;
+      line-height: 1.5;
+      border: 1px solid #2a2a2a;
+      font-size: 0.9rem;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+      tab-size: 4;
     }
 
-    pre code {
-      #background: transparent;
+    pre code,
+    code[class*="language-"] {
+      font-family: "IBM Plex Mono", "SFMono-Regular", Consolas, monospace;
+      background: transparent !important;
       padding: 0;
       color: inherit;
+      border: 0;
       border-radius: 0;
-      font-size: 0.95rem;
+      font-size: inherit;
+      text-shadow: none;
+      white-space: pre;
+    }
+
+    /* Dark scrollbar for code blocks */
+    pre::-webkit-scrollbar {
+      height: 10px;
+      width: 10px;
+    }
+
+    pre::-webkit-scrollbar-track {
+      background: #1b1b1b;
+      border-radius: 10px;
+    }
+
+    pre::-webkit-scrollbar-thumb {
+      background: #555;
+      border-radius: 10px;
+    }
+
+    pre::-webkit-scrollbar-thumb:hover {
+      background: #777;
+    }
+
+    /* Prism token colors tuned for the black code background */
+    .token.comment,
+    .token.prolog,
+    .token.doctype,
+    .token.cdata {
+      color: #8b949e;
+      font-style: italic;
+    }
+
+    .token.punctuation {
+      color: #d4d4d4;
+    }
+
+    .token.property,
+    .token.tag,
+    .token.boolean,
+    .token.number,
+    .token.constant,
+    .token.symbol,
+    .token.deleted {
+      color: #79c0ff;
+    }
+
+    .token.selector,
+    .token.attr-name,
+    .token.string,
+    .token.char,
+    .token.builtin,
+    .token.inserted {
+      color: #a5d6ff;
+    }
+
+    .token.operator,
+    .token.entity,
+    .token.url,
+    .language-css .token.string,
+    .style .token.string {
+      color: #ff7b72;
+    }
+
+    .token.atrule,
+    .token.attr-value,
+    .token.keyword {
+      color: #ff7b72;
+    }
+
+    .token.function,
+    .token.class-name {
+      color: #d2a8ff;
+    }
+
+    .token.regex,
+    .token.important,
+    .token.variable {
+      color: #ffa657;
     }
 
     blockquote {
@@ -151,8 +245,8 @@
   <div class="date">2026-05-13</div>
 
   <div class="content">
-   
-        <h3>Summary</h3>
+
+    <h3>Summary</h3>
 
     <p>
       In this post, I describe my first experience installing and building
@@ -178,27 +272,27 @@
       I first installed CMake through the Ubuntu package manager:
     </p>
 
-    <pre><code>sudo apt install cmake</code></pre>
+    <pre><code class="language-bash">sudo apt install cmake</code></pre>
 
     <p>
       However, when running the configuration step with <code>cmake ..</code>, I ran into problems related to missing development tools. I installed both <code>clang-tidy</code> and <code>clang-format</code>:
     </p>
 
-    <pre><code>sudo apt install clang-tidy
+    <pre><code class="language-bash">sudo apt install clang-tidy
 sudo apt install clang-format</code></pre>
 
     <p>
       After that, I still had another issue: the CMake version installed through <code>apt</code> was 3.16.3, which was not enough for the project configuration step. I removed the system package and installed a newer version through Python:
     </p>
 
-    <pre><code>sudo apt remove cmake
+    <pre><code class="language-bash">sudo apt remove cmake
 pip install --upgrade cmake</code></pre>
 
     <p>
       The shell was still trying to call the old binary path at <code>/usr/bin/cmake</code>. Since the new CMake binary was installed inside my Anaconda environment, I called it directly:
     </p>
 
-    <pre><code>/home/gjperin/anaconda3/bin/cmake ..</code></pre>
+    <pre><code class="language-bash">/home/gjperin/anaconda3/bin/cmake ..</code></pre>
 
     <p>
       With the newer CMake version, the configuration step completed successfully. ArKanjo cloned the required Tree-sitter parsers for C and Rust and generated the build files.
@@ -210,19 +304,19 @@ pip install --upgrade cmake</code></pre>
       The next issue appeared during compilation. The build failed while compiling Tree-sitter because the ICU development headers were missing:
     </p>
 
-    <pre><code>fatal error: unicode/umachine.h: Arquivo ou diretório inexistente</code></pre>
+    <pre><code class="language-text">fatal error: unicode/umachine.h: Arquivo ou diretório inexistente</code></pre>
 
     <p>
       The fix was to install the ICU development package:
     </p>
 
-    <pre><code>sudo apt install libicu-dev</code></pre>
+    <pre><code class="language-bash">sudo apt install libicu-dev</code></pre>
 
     <p>
       After installing this dependency, I reran the build command and the project compiled successfully:
     </p>
 
-    <pre><code>/home/gjperin/anaconda3/bin/cmake --build .</code></pre>
+    <pre><code class="language-bash">/home/gjperin/anaconda3/bin/cmake --build .</code></pre>
 
     <p>
       The build produced the main <code>arkanjo</code> executable, the <code>arkanjo-preprocessor</code> executable, and the test binary. There were some compiler warnings, but they did not prevent the build from completing.
@@ -234,31 +328,30 @@ pip install --upgrade cmake</code></pre>
       My first installation attempt failed because CMake tried to copy the binaries into <code>/usr/local/bin</code>, which requires administrator permission:
     </p>
 
-    <pre><code>file INSTALL cannot copy file ".../build/arkanjo"
+    <pre><code class="language-text">file INSTALL cannot copy file ".../build/arkanjo"
 to "/usr/local/bin/arkanjo": Permission denied.</code></pre>
 
     <p>
       Running the installation step with <code>sudo</code> solved the problem:
     </p>
 
-    <pre><code>sudo /home/gjperin/anaconda3/bin/cmake --install .</code></pre>
+    <pre><code class="language-bash">sudo /home/gjperin/anaconda3/bin/cmake --install .</code></pre>
 
     <p>
       This installed both <code>arkanjo</code> and <code>arkanjo-preprocessor</code> under <code>/usr/local/bin</code>, together with the required third-party files under <code>/usr/local/lib/arkanjo</code>.
     </p>
 
-    <h3>Takeaways</h3>
+    <h3>Conclusion</h3>
 
     <p>
       This first step was useful mainly as a setup and environment exercise. The practical lessons were: ArKanjo currently benefits from a recent CMake version; the configuration step expects some development tools such as <code>clang-tidy</code> and <code>clang-format</code>; and the Tree-sitter dependency requires ICU development headers to be available in the system.
     </p>
 
-    <p>
-      From a kernel-contribution perspective, ArKanjo is interesting because it connects directly with the kind of work I have been exploring in previous posts: using tooling to identify small, concrete maintenance opportunities in a large codebase. The important point is that duplicated code should not be treated mechanically. As emphasized by the ArKanjo work, the kernel has many cases where local context matters, and a useful tool should help developers inspect candidates rather than blindly remove duplication.
-    </p>
-  
   </div>
 </section>
+
+<script src="https://cdn.jsdelivr.net/npm/prismjs/prism.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs/components/prism-bash.min.js"></script>
 
 </body>
 </html>

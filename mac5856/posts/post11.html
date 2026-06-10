@@ -198,10 +198,6 @@
       as the default model because it is small enough to run in our experimental setup while still being specialized for code. However, the implementation does not hard-code this choice: model name, batch size, maximum sequence length, and threshold-related options are exposed as configuration parameters so users can adapt the method to their own hardware and use cases.
     </p>
 
-    <blockquote>
-      TODO: add the final pull request link, branch name, or commit hash here.
-    </blockquote>
-
     <h3>Implementing the embedding method</h3>
 
     <p>
@@ -216,6 +212,18 @@
       We also kept the model choice configurable. Although <code>jinaai/jina-embeddings-v2-base-code</code> was the model used in these experiments, users may want to try larger models, newer code embedding models, or local models better suited to their programming language. Exposing these options makes the contribution more flexible and avoids tying ArKanjo to a single embedding backend.
     </p>
 
+
+    <h3>Evaluation dataset</h3>
+
+    <p>
+      For the comparison, we used the
+      <a href="https://github.com/microsoft/CodeXGLUE/tree/main/Code-Code/Clone-detection-POJ-104">POJ-104 dataset</a>. In the CodeXGLUE formulation, each program has a label corresponding to the problem it solves, and the goal is to retrieve or identify code with the same semantics.
+    </p>
+
+    <p>
+      Our evaluation is a smaller threshold-based experiment rather than the full CodeXGLUE retrieval benchmark. We randomly sampled 30 problems and 10 examples from each problem, resulting in 300 code files. We then considered two files to be clones when they solve the same problem. This gives a simple binary duplicate detection setup: pairs from the same problem are positive examples, while pairs from different problems are negative examples.
+    </p>
+
     <h3>File-level granularity</h3>
 
     <p>
@@ -225,21 +233,6 @@
     <p>
       This mode is useful for datasets where each file corresponds to one complete solution or program. In this setting, the duplicate detection problem becomes: given two source files, decide whether they solve the same problem.
     </p>
-
-    <h3>Evaluation dataset</h3>
-
-    <p>
-      For the comparison, we used the
-      <a href="https://github.com/microsoft/CodeXGLUE/tree/main/Code-Code/Clone-detection-POJ-104">POJ-104 dataset</a>, a commonly used benchmark for code clone detection. In the CodeXGLUE formulation, each program has a label corresponding to the problem it solves, and the goal is to retrieve or identify code with the same semantics.
-    </p>
-
-    <p>
-      Our evaluation is a smaller threshold-based experiment rather than the full CodeXGLUE retrieval benchmark. We randomly sampled 30 problems and 10 examples from each problem, resulting in 300 code files. We then considered two files to be clones when they solve the same problem. This gives a simple binary duplicate detection setup: pairs from the same problem are positive examples, while pairs from different problems are negative examples.
-    </p>
-
-    <blockquote>
-      TODO: add the random seed and exact preprocessing command here, if you want the experiment to be fully reproducible.
-    </blockquote>
 
     <h3>Compared methods</h3>
 
@@ -252,11 +245,11 @@
     </p>
 
     <p>
-      <strong>NLP text similarity.</strong> This method treats code mostly as text and compares textual representations of the files. It can capture more similarity than a strict diff in some cases, but it is still strongly affected by surface-level lexical overlap.
+      <strong>NLP text similarity.</strong> This method treats code mostly as text and compares textual representations of the files, using a bag of words approach. 
     </p>
 
     <p>
-      <strong>AST.</strong> This method uses the abstract syntax tree representation of the code. Since the AST captures syntactic structure, it can be more robust than raw text comparison when formatting and names change. However, it is still mainly a structural method, not a semantic model of program behavior.
+      <strong>AST.</strong> This method uses the abstract syntax tree representation of the code.
     </p>
 
     <p>
@@ -373,10 +366,6 @@
     <p>
       All implementation changes from this contribution have been submitted to the ArKanjo repository.
     </p>
-
-    <blockquote>
-      TODO: replace this sentence with the merged pull request link or final repository link after publication.
-    </blockquote>
 
   </div>
 </section>
