@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Linux Kernel Deduplication Patch Study: Proposal and Data Exploration</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <style>
+    body {
+      margin: 0;
+      font-family: "IBM Plex Sans", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      color: #111;
+      line-height: 1.6;
+      background: #f5f5f5;
+    }
+
+    header {
+      background: #000;
+    }
+
+    .header-inner {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 14px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .name {
+      font-weight: 600;
+      color: #fff;
+      text-decoration: none;
+    }
+
+    nav a {
+      margin-left: 16px;
+      text-decoration: none;
+      color: #eaeaea;
+      font-size: 0.95rem;
+    }
+
+    nav a:hover {
+      text-decoration: underline;
+      color: #ffffff;
+    }
+
+    section {
+      max-width: 900px;
+      margin: 60px auto;
+      padding: 0 20px;
+    }
+
+    h2 {
+      margin-bottom: 10px;
+      border-bottom: 1px solid #ddd;
+      padding-bottom: 6px;
+      font-size: 1.25rem;
+    }
+
+    h3 {
+      margin-top: 28px;
+      margin-bottom: 10px;
+      font-size: 1.05rem;
+    }
+
+    .date {
+      font-family: monospace;
+      color: #666;
+      margin-bottom: 20px;
+    }
+
+    .content p {
+      text-align: justify;
+      text-justify: inter-word;
+      hyphens: auto;
+      margin-top: 0;
+      margin-bottom: 12px;
+    }
+
+    .content code {
+      font-family: "IBM Plex Mono", "SFMono-Regular", Consolas, monospace;
+      padding: 0.12rem 0.3rem;
+      border-radius: 4px;
+      font-size: 0.95em;
+    }
+
+    pre {
+      background: #111;
+      color: #f0f0f0;
+      padding: 14px 16px;
+      border-radius: 8px;
+      overflow-x: auto;
+      margin: 14px 0 18px 0;
+      line-height: 1.45;
+      border: 1px solid #ddd;
+    }
+
+    pre code {
+      background: transparent;
+      padding: 0;
+      color: inherit;
+      border-radius: 0;
+      font-size: 0.95rem;
+    }
+
+    blockquote {
+      margin: 16px 0;
+      padding: 10px 16px;
+      border-left: 4px solid #bbb;
+      background: #efefef;
+      color: #222;
+    }
+
+    figure {
+      margin: 22px 0;
+      padding: 0;
+    }
+
+    figure img {
+      width: 100%;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      background: #fff;
+    }
+
+    figcaption {
+      margin-top: 8px;
+      color: #555;
+      font-size: 0.92rem;
+      text-align: center;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0 20px 0;
+      background: #fff;
+    }
+
+    th, td {
+      border: 1px solid #ddd;
+      padding: 8px 10px;
+      text-align: left;
+    }
+
+    th {
+      background: #eee;
+      font-weight: 600;
+    }
+
+    .back-link {
+      display: inline-block;
+      margin-bottom: 18px;
+      color: #111;
+      text-decoration: none;
+    }
+
+    .back-link:hover {
+      text-decoration: underline;
+    }
+
+    .placeholder {
+      color: #666;
+      font-style: italic;
+    }
+  </style>
+</head>
+
+<body>
+
+<header>
+  <div class="header-inner">
+    <a href="https://gabjp.github.io/" class="name">Gabriel Jacob Perin</a>
+    <nav>
+      <a href="../index.html#about">About</a>
+      <a href="../index.html#posts">Posts</a>
+    </nav>
+  </div>
+</header>
+
+<section>
+  <a class="back-link" href="../index.html">← Back to blog</a>
+  <h2>Linux Kernel Deduplication Patch Study: Proposal and Data Exploration</h2>
+  <div class="date">2026-06-30</div>
+
+  <div class="content">
+
+    <h3>Summary</h3>
+
+    <p>
+      In this post, we describe the plan for a small empirical study about code deduplication patches in the Linux kernel mailing lists. The goal is to understand how often kernel patches are related to duplicate or redundant code, how these patches are discussed by maintainers, and whether accepted and rejected patches show different patterns.
+    </p>
+
+    <p>
+       Our immediate objective is to define a reliable filtering pipeline, manually validate a subset of threads, use a language model to scale the annotation process, and connect the resulting dataset with Patchwork metadata in order to estimate whether each patch was accepted, rejected, or left unresolved.
+    </p>
+
+    <h3>Motivation</h3>
+
+    <p>
+      Code duplication is usually discussed as a software maintenance problem: duplicated logic can make bugs easier to copy, fixes harder to apply consistently, and codebases more difficult to evolve. However, in a large project such as the Linux kernel, not every repeated pattern is obviously bad. Sometimes duplication is intentionally kept for readability, hardware-specific behavior, subsystem isolation, or because an abstraction would make the code harder to understand.
+    </p>
+
+    <p>
+      This makes kernel patch discussions a useful source of evidence. Instead of only asking whether duplicate code exists, we can study how developers justify removing it, when maintainers accept deduplication patches, and when they push back against them.
+    </p>
+
+    <h3>Research questions</h3>
+
+    <p>
+      We plan to organize the study around four main questions.
+    </p>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Question</th>
+          <th>Planned measurement</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>How many threads are related to code duplication or deduplication?</td>
+          <td>Count threads selected by a permissive regex filter and then validated manually or with an LLM.</td>
+        </tr>
+        <tr>
+          <td>Among those patches, how many were accepted or rejected?</td>
+          <td>Cross the selected threads with Patchwork data and assign an acceptance status when available.</td>
+        </tr>
+        <tr>
+          <td>Do maintainers differ in how they respond to deduplication patches?</td>
+          <td>Compare acceptance and rejection rates by maintainer, using either the last maintainer reply or all maintainer replies in a thread.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>Defining duplication</h3>
+
+    TODO
+
+    <p>
+      The first step is to define what we mean by duplication. We will start from the classic clone types and adapt them to the kernel patch setting. In this initial plan, we consider clone types 1, 2, 3, and 4, but we also include simpler deduplication changes that may not fit cleanly into the usual taxonomy.
+    </p>
+
+    <p>
+      Type-1 clones are near-identical code fragments, usually differing only in whitespace, comments, or formatting. Type-2 clones also allow changes in names, literals, or identifiers. Type-3 clones include copied code with added, removed, or modified statements. Type-4 clones are semantically similar pieces of code that implement the same behavior but may look structurally different.
+    </p>
+
+    <p>
+      In addition to these standard categories, kernel patches often include practical deduplication changes that are more local and idiomatic. For example, a patch may remove a repeated null check because a helper function is already null-aware, replace repeated logic with an existing helper, or simplify two branches that perform the same operation. These changes are important for our study even when they are not presented as traditional clone removal.
+    </p>
+
+    <h3>Filtering pipeline</h3>
+
+    -Permissive filter w/ regex
+    -Stronger filter with LLM
+    -Manual verification
+    - 
+
+    <h3>Manual validation</h3>
+
+    <p>
+      The next step is to separate a test set of candidate threads and inspect them manually. For each thread, we will decide whether it is actually about duplication or deduplication, and if so, which kind of duplication it represents.
+    </p>
+
+    <p>
+      Manual validation has two goals. First, it gives us an estimate of how noisy the permissive regex filter is. Second, it creates a reference set that can be used to evaluate whether an LLM can reproduce our labels.
+    </p>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Thread</th>
+          <th>Manual label</th>
+          <th>Duplication type</th>
+          <th>Notes</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="placeholder">thread-id-1</span></td>
+          <td><span class="placeholder">relevant / not relevant</span></td>
+          <td><span class="placeholder">type 1 / type 2 / type 3 / type 4 / local deduplication</span></td>
+          <td><span class="placeholder">short explanation</span></td>
+        </tr>
+        <tr>
+          <td><span class="placeholder">thread-id-2</span></td>
+          <td><span class="placeholder">relevant / not relevant</span></td>
+          <td><span class="placeholder">type 1 / type 2 / type 3 / type 4 / local deduplication</span></td>
+          <td><span class="placeholder">short explanation</span></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p>
+      We will also keep examples of diffs for each duplication type. These examples will be useful both for the paper proposal and for prompting the LLM. The goal is not only to classify threads, but also to make the categories concrete and reproducible.
+    </p>
+
+    <h3>LLM-assisted filtering</h3>
+
+    <p>
+      Once we have a manually labeled validation set, we will pass the same threads to an LLM and compare its labels with ours. The LLM will receive the subject, commit message, relevant email body, and possibly the patch diff. It will then answer whether the thread is about duplication and, when relevant, assign a duplication category.
+    </p>
+
+    <p>
+      If the LLM agrees with the manual labels on the validation set, we will use it to classify the remaining candidate threads. If the agreement is weak, we will revise the prompt, improve the category definitions, or reduce the LLM task to a simpler binary decision: duplication-related or not.
+    </p>
+
+    <pre><code>Planned LLM outputs:
+{
+  "is_deduplication_related": true,
+  "duplication_type": "local_deduplication",
+  "confidence": "high",
+  "evidence": "The patch removes a repeated check because the helper already handles NULL."
+}</code></pre>
+
+    <p>
+      This step is especially useful because many relevant patches may not use exactly the same vocabulary. A regex can find obvious terms, but an LLM may be better at recognizing cases where the patch is about consolidating logic, removing repeated checks, or replacing duplicated behavior with a helper function.
+    </p>
+
+    <h3>Accepted and rejected patches</h3>
+
+    <p>
+      To label patches as accepted or rejected, we plan to cross the selected threads with Patchwork data from <code>patchwork.kernel.org</code>. When a thread corresponds to a patch tracked by Patchwork, we can use its available status as an external signal of whether the patch was accepted, rejected, superseded, or left in another state.
+    </p>
+
+    <p>
+      This label will likely be imperfect. Patch acceptance is not always a simple binary variable: a patch may be revised in a later version, accepted as part of a series, superseded by another implementation, or discussed without a clear final status. For that reason, we will keep the raw Patchwork status when possible and only collapse it into accepted/rejected categories for analyses where this simplification is appropriate.
+    </p>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Thread</th>
+          <th>Patchwork status</th>
+          <th>Collapsed label</th>
+          <th>Reason for label</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="placeholder">thread-id-1</span></td>
+          <td><span class="placeholder">accepted / rejected / superseded / new / unknown</span></td>
+          <td><span class="placeholder">accepted / rejected / unresolved</span></td>
+          <td><span class="placeholder">status from Patchwork or manual decision</span></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>Comparing maintainers</h3>
+
+    <p>
+      A central part of the study is to compare how maintainers respond to deduplication patches. The first plan is to identify, for each thread, the last maintainer who replied. This gives a simple proxy for the maintainer most closely associated with the final direction of the discussion.
+    </p>
+
+    <p>
+      However, this may be too simplistic. If one maintainer frequently replies last across many threads, the analysis could overrepresent that person. Therefore, we also keep a second plan: instead of considering only the last maintainer reply, we can collect all maintainers who participated in the thread and compare acceptance or rejection patterns across that broader set.
+    </p>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Analysis</th>
+          <th>Definition</th>
+          <th>Risk</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Plan A</td>
+          <td>Use the last maintainer who replied in each thread.</td>
+          <td>May be biased if one maintainer often replies last.</td>
+        </tr>
+        <tr>
+          <td>Plan B</td>
+          <td>Use all maintainers who replied in each thread.</td>
+          <td>May overcount threads with long discussions or many maintainers.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p>
+      We will treat maintainer comparison as exploratory rather than causal. A higher or lower acceptance rate for a maintainer does not necessarily mean that the maintainer is more or less favorable to deduplication. It may reflect subsystem differences, patch quality, contributor experience, or the kinds of deduplication changes submitted to that maintainer.
+    </p>
+
+</body>
+</html>
