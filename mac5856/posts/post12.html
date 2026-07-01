@@ -146,11 +146,22 @@
       border: 1px solid #ddd;
       padding: 8px 10px;
       text-align: left;
+      vertical-align: top;
     }
 
     th {
       background: #eee;
       font-weight: 600;
+    }
+
+    ul, ol {
+      margin-top: 0;
+      margin-bottom: 16px;
+      padding-left: 24px;
+    }
+
+    li {
+      margin-bottom: 6px;
     }
 
     .back-link {
@@ -168,6 +179,12 @@
       color: #666;
       font-style: italic;
     }
+
+    pre.scroll-box {
+      max-height: 300px;
+      overflow-y: auto;
+    }
+
   </style>
 </head>
 
@@ -197,7 +214,7 @@
     </p>
 
     <p>
-       Our immediate objective is to define a reliable filtering pipeline, manually validate a subset of threads, use a language model to scale the annotation process, and connect the resulting dataset with Patchwork metadata in order to estimate whether each patch was accepted, rejected, or left unresolved.
+      We use the <a href="https://zenodo.org/records/17567225">Linux Kernel Mailing List 5Ws Dataset</a>, which collects Linux kernel mailing-list messages and organizes them into subsystem-specific data files. Since this post is only a small demonstration of the proposed pipeline, we restrict the analysis to the <code>iio</code> subset rather than running the full study across all available subsystems.
     </p>
 
     <h3>Motivation</h3>
@@ -213,38 +230,19 @@
     <h3>Research questions</h3>
 
     <p>
-      We plan to organize the study around four main questions.
+      We organize the study around three main questions.
     </p>
 
-    <table>
-      <thead>
-        <tr>
-          <th>Question</th>
-          <th>Planned measurement</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td>How many threads are related to code duplication or deduplication?</td>
-          <td>Count threads selected by a permissive regex filter and then validated manually or with an LLM.</td>
-        </tr>
-        <tr>
-          <td>Among those patches, how many were accepted or rejected?</td>
-          <td>Cross the selected threads with Patchwork data and assign an acceptance status when available.</td>
-        </tr>
-        <tr>
-          <td>Do maintainers differ in how they respond to deduplication patches?</td>
-          <td>Compare acceptance and rejection rates by maintainer, using either the last maintainer reply or all maintainer replies in a thread.</td>
-        </tr>
-      </tbody>
-    </table>
+    <ol>
+      <li><strong>Q1:</strong> How many mailing-list threads (i. e. patches) are actually related to source-code duplication or deduplication?</li>
+      <li><strong>Q2:</strong> Among the deduplication-related patches, how many were accepted, rejected, or left unresolved?</li>
+      <li><strong>Q3:</strong> Do maintainers differ in how they respond to deduplication-related patches?</li>
+    </ol>
 
     <h3>Defining duplication</h3>
 
-    TODO
-
     <p>
-      The first step is to define what we mean by duplication. We will start from the classic clone types and adapt them to the kernel patch setting. In this initial plan, we consider clone types 1, 2, 3, and 4, but we also include simpler deduplication changes that may not fit cleanly into the usual taxonomy.
+      The first step is to define what we mean by duplication. We start from the clone taxonomy summarized by Chen, Zain, and Zhou in <a href="https://link.springer.com/article/10.1007/s00521-022-07707-2"><em>Definition, approaches, and analysis of code duplication detection (2006–2020): a critical review</em></a>, and adapt it to the kernel patch setting.
     </p>
 
     <p>
@@ -252,141 +250,290 @@
     </p>
 
     <p>
-      In addition to these standard categories, kernel patches often include practical deduplication changes that are more local and idiomatic. For example, a patch may remove a repeated null check because a helper function is already null-aware, replace repeated logic with an existing helper, or simplify two branches that perform the same operation. These changes are important for our study even when they are not presented as traditional clone removal.
-    </p>
-
-    <h3>Filtering pipeline</h3>
-
-    -Permissive filter w/ regex
-    -Stronger filter with LLM
-    -Manual verification
-    - 
-
-    <h3>Manual validation</h3>
-
-    <p>
-      The next step is to separate a test set of candidate threads and inspect them manually. For each thread, we will decide whether it is actually about duplication or deduplication, and if so, which kind of duplication it represents.
+      In this study, a thread is treated as <code>CODE_DUPLICATION</code> when it explicitly discusses duplicated source-code logic or a deduplication refactor. Typical examples include extracting duplicated logic into a helper, replacing multiple implementations with one common implementation, or sharing repeated initialization code across call sites.
     </p>
 
     <p>
-      Manual validation has two goals. First, it gives us an estimate of how noisy the permissive regex filter is. Second, it creates a reference set that can be used to evaluate whether an LLM can reproduce our labels.
+      Importantly, removing redundancy is not the same as removing code duplication. Many kernel patches remove repeated function calls, duplicated checks, unnecessary conditions, dead code, or cleanup-only logic. These changes may still be useful, but they should be classified separately as <code>REDUNDANCY_REMOVAL</code>, not as <code>CODE_DUPLICATION</code>.
     </p>
+
+    <h3>Data preparation</h3>
+
+    <p>
+      The data preparation has four stages. First, we group emails into threads. Second, we apply a permissive regex filter to the subject and body of each thread. Third, we pass the remaining candidate threads to an LLM classifier to separate true code-duplication cases from false positives and redundancy-removal cases.
+    </p>
+
+    <h3>Step 1: Group emails into threads</h3>
+
+    <p>
+      We start by grouping emails into discussion threads. The thread is the unit of analysis because a single patch email may not contain enough context. Follow-up messages often clarify whether the patch is really about duplicated source code, a simpler cleanup, or something unrelated to code duplication.
+    </p>
+
+<h3>Step 2: Permissive regex filter</h3>
+
+<p>
+  We then apply a permissive keyword filter to the subject and body of the emails in each thread. The goal is not to be precise at this stage, but to avoid missing potentially relevant discussions. In other words, this step is designed for high recall: it selects candidate threads that may mention duplicated or redundant source code, while leaving the final classification to the LLM-based filter.
+</p>
+
+<pre class="scroll-box"><code>DUPLICATED_CODE_RE = re.compile(
+    r"""
+    \b(?:
+        # Action or property followed by code-related context.
+        # Examples: "duplicate code", "cloned macro", "redundant logic"
+        (?:
+            de[-_]?duplicat\w* |
+            dedup\w* |
+            duplicat\w* |
+            repeated |
+            redundant |
+            identical |
+            same |
+            cloned?
+        )
+        \s+
+        (?:code|check|logic|block|function|routine|macro|implementation|snippet)
+
+        |
+
+        # Code-related context followed by duplication terminology.
+        # Examples: "code duplication", "logic deduplication"
+        (?:code|logic|block|function|routine|macro|snippet)
+        \s+
+        (?:duplication|deduplication|dedup\b)
+
+        |
+
+        # Explicit copy-paste terminology.
+        copy\s*[-_]?\s*past(?:e|ed|ing)
+    )\b
+    """,
+    re.IGNORECASE | re.VERBOSE,
+)</code></pre>
+
+<p>
+  This regular expression searches for three kinds of evidence. First, it captures duplication-related words followed by a code-related term, such as <code>duplicate code</code>, <code>redundant logic</code>, or <code>cloned macro</code>. Second, it captures the reverse order, such as <code>code duplication</code> or <code>logic deduplication</code>. Third, it captures explicit copy-paste terminology, such as <code>copy-paste</code>, <code>copy pasted</code>, or <code>copy pasting</code>. Because this filter is intentionally permissive, it may still include false positives; these are handled in the next classification step.
+</p>
+    <h3>Step 3: LLM-based classification</h3>
+
+    <p>
+      After the regex stage, the remaining candidate threads are given to an LLM. The LLM receives the full thread and returns a single label describing whether the discussion is about source-code duplication, redundancy removal, or something else.
+    </p>
+
+<pre class="scroll-box"><code>SYSTEM_PROMPT = """
+You are an expert in Software Engineering,
+code clone detection and Linux Kernel development.
+
+Your task is to classify whether an LKML thread
+(a discussion composed of one or more emails)
+is actually related to source code duplication.
+
+You will receive every message of the thread, in order.
+Consider the whole discussion together and return a
+single label that best describes the thread.
+
+The dataset was already filtered using regex.
+Therefore many emails contain words such as:
+
+duplicate
+duplicated
+duplication
+
+but are false positives.
+
+Analyze the technical meaning.
+
+------------------------------------------------
+
+CODE DUPLICATION
+
+Code duplication occurs when the same or
+substantially similar program logic exists
+in multiple source code locations.
+
+Clone taxonomy:
+
+Type 1:
+Exact duplicated code.
+
+Type 2:
+Duplicated code with renamed identifiers,
+constants or types.
+
+Type 3:
+Copied code with modifications,
+added or removed statements.
+
+Type 4:
+Different implementations providing
+equivalent functionality.
+
+------------------------------------------------
+
+CODE DEDUPLICATION
+
+Deduplication happens when duplicated
+implementations are refactored into a
+single shared implementation.
+
+Examples:
+
+- Extract duplicated logic into a helper.
+- Replace multiple implementations by one common implementation.
+- Share common initialization code.
+
+------------------------------------------------
+
+IMPORTANT
+
+Removing redundancy is NOT code duplication.
+
+Examples:
+
+- Removing repeated function calls.
+- Removing duplicated checks.
+- Removing unnecessary conditions.
+- Removing dead code.
+- Cleanup.
+
+These should be classified as:
+
+REDUNDANCY_REMOVAL
+
+------------------------------------------------
+
+False positives:
+
+These are NOT code duplication:
+
+- duplicate index
+- duplicate timestamp
+- duplicate packet
+- duplicate request
+- duplicate message
+
+unless the email explicitly discusses
+duplicated source code.
+
+------------------------------------------------
+
+Return ONLY one label:
+
+CODE_DUPLICATION
+REDUNDANCY_REMOVAL
+NOT_CODE_DUPLICATION
+INSUFFICIENT_INFORMATION
+"""</code></pre>
+
+    <h3>Manual verification</h3>
+
+    <p>
+      For this pipeline to become part of a full paper, we would need to validate whether the LLM can correctly classify the filtered threads. A reasonable next step would be to manually label a subset of threads, compare those labels with the LLM outputs, and estimate agreement between human and model judgments.
+    </p>
+
+    <p>
+      Since this post is only a proposal and small demonstration, we skip the manual validation step for now and trust the LLM classifications as a first approximation.
+    </p>
+
+    <h3>Step 4: Retrieving patch status</h3>
+
+    <p>
+      After filtering the threads with the LLM, we cross the resulting set of candidate patches with the
+      <a href="https://patchwork.kernel.org/">Patchwork</a> API. Patchwork is a patch-tracking system used by several Linux kernel subsystems to follow patches submitted to mailing lists. In this study, we use it to estimate the current status of each deduplication-related patch.
+    </p>
+
+    <p>
+      The main statuses we consider are <code>accepted</code>, <code>rejected</code>, <code>changes-requested</code>, <code>new</code>, <code>superseded</code>, <code>not-applicable</code>, and <code>handled-elsewhere</code>. In practice, <code>accepted</code> suggests that the patch was accepted or merged, <code>rejected</code> means it was not accepted, <code>changes-requested</code> indicates that reviewers asked for revisions, and <code>new</code> usually means that no final decision is recorded yet. The <code>superseded</code> status is used when a patch was replaced by a newer version, while <code>not-applicable</code> and <code>handled-elsewhere</code> capture cases where the patch is no longer directly tracked as a normal pending patch.
+    </p>
+
+    <p>
+      Some threads could not be matched to a Patchwork entry. We keep these cases as <code>no status found</code>, since the absence of a Patchwork record does not necessarily mean that the patch was rejected or ignored.
+    </p>
+
+    <h3>Results: How many mailing-list threads (i.e. patches) are actually related to source-code duplication or deduplication?</h3>
 
     <table>
       <thead>
         <tr>
-          <th>Thread</th>
-          <th>Manual label</th>
-          <th>Duplication type</th>
-          <th>Notes</th>
+          <th>Stage / label</th>
+          <th>Number of threads</th>
+          <th>Percentage of total <code>iio</code> threads</th>
         </tr>
       </thead>
       <tbody>
         <tr>
-          <td><span class="placeholder">thread-id-1</span></td>
-          <td><span class="placeholder">relevant / not relevant</span></td>
-          <td><span class="placeholder">type 1 / type 2 / type 3 / type 4 / local deduplication</span></td>
-          <td><span class="placeholder">short explanation</span></td>
+          <td>Total <code>iio</code> threads</td>
+          <td>16,291</td>
+          <td>100.00%</td>
         </tr>
         <tr>
-          <td><span class="placeholder">thread-id-2</span></td>
-          <td><span class="placeholder">relevant / not relevant</span></td>
-          <td><span class="placeholder">type 1 / type 2 / type 3 / type 4 / local deduplication</span></td>
-          <td><span class="placeholder">short explanation</span></td>
+          <td>Threads after regex filter</td>
+          <td>429</td>
+          <td>2.63%</td>
+        </tr>
+        <tr>
+          <td><code>CODE_DUPLICATION</code></td>
+          <td>121</td>
+          <td>0.74%</td>
+        </tr>
+        <tr>
+          <td><code>REDUNDANCY_REMOVAL</code></td>
+          <td>132</td>
+          <td>0.81%</td>
         </tr>
       </tbody>
     </table>
 
     <p>
-      We will also keep examples of diffs for each duplication type. These examples will be useful both for the paper proposal and for prompting the LLM. The goal is not only to classify threads, but also to make the categories concrete and reproducible.
+      The permissive regex filter substantially reduces the search space, from 16,291 <code>iio</code> threads to 429 candidate threads, or 2.63% of the subset. After LLM classification, 121 threads are labeled as source-code duplication or deduplication, while 132 are labeled as redundancy removal. Together, these two useful categories account for 253 threads: 1.55% of all <code>iio</code> threads and 58.97% of the regex-filtered candidates.
     </p>
 
-    <h3>LLM-assisted filtering</h3>
+    <h3>Results: Among the deduplication-related patches, how many were accepted, rejected, or left unresolved?</h3>
+
+    <figure>
+      <img src="paper_proposal_q2.png" alt="Patchwork status distribution for code duplication and redundancy removal threads">
+      <figcaption>
+        Patchwork status distribution for threads classified as code duplication and redundancy removal.
+      </figcaption>
+    </figure>
 
     <p>
-      Once we have a manually labeled validation set, we will pass the same threads to an LLM and compare its labels with ours. The LLM will receive the subject, commit message, relevant email body, and possibly the patch diff. It will then answer whether the thread is about duplication and, when relevant, assign a duplication category.
-    </p>
-
-    <p>
-      If the LLM agrees with the manual labels on the validation set, we will use it to classify the remaining candidate threads. If the agreement is weak, we will revise the prompt, improve the category definitions, or reduce the LLM task to a simpler binary decision: duplication-related or not.
-    </p>
-
-    <pre><code>Planned LLM outputs:
-{
-  "is_deduplication_related": true,
-  "duplication_type": "local_deduplication",
-  "confidence": "high",
-  "evidence": "The patch removes a repeated check because the helper already handles NULL."
-}</code></pre>
-
-    <p>
-      This step is especially useful because many relevant patches may not use exactly the same vocabulary. A regex can find obvious terms, but an LLM may be better at recognizing cases where the patch is about consolidating logic, removing repeated checks, or replacing duplicated behavior with a helper function.
-    </p>
-
-    <h3>Accepted and rejected patches</h3>
-
-    <p>
-      To label patches as accepted or rejected, we plan to cross the selected threads with Patchwork data from <code>patchwork.kernel.org</code>. When a thread corresponds to a patch tracked by Patchwork, we can use its available status as an external signal of whether the patch was accepted, rejected, superseded, or left in another state.
+      Among the 121 threads classified as code duplication, only 10 were marked as accepted in Patchwork, corresponding to 8% of the duplication-related threads. A larger fraction received changes requested, with 30 threads, or 25%, while 25 threads, or 21%, were still marked as new. The largest group was composed of threads for which no Patchwork status was found, with 50 threads, or 41%.
     </p>
 
     <p>
-      This label will likely be imperfect. Patch acceptance is not always a simple binary variable: a patch may be revised in a later version, accepted as part of a series, superseded by another implementation, or discussed without a clear final status. For that reason, we will keep the raw Patchwork status when possible and only collapse it into accepted/rejected categories for analyses where this simplification is appropriate.
+      The redundancy-removal threads show a similar pattern. Out of 132 threads, 15 were accepted, corresponding to 11%, while 32, or 24%, received changes requested. Another 34 threads, or 26%, were marked as new, and 42 threads, or 32%, had no Patchwork status found. Overall, accepted patches are a minority in both groups, while unresolved or unmatched Patchwork statuses represent a large part of the data. This suggests that the Patchwork matching step is useful, but the acceptance/rejection analysis should be interpreted carefully.
     </p>
 
-    <table>
-      <thead>
-        <tr>
-          <th>Thread</th>
-          <th>Patchwork status</th>
-          <th>Collapsed label</th>
-          <th>Reason for label</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td><span class="placeholder">thread-id-1</span></td>
-          <td><span class="placeholder">accepted / rejected / superseded / new / unknown</span></td>
-          <td><span class="placeholder">accepted / rejected / unresolved</span></td>
-          <td><span class="placeholder">status from Patchwork or manual decision</span></td>
-        </tr>
-      </tbody>
-    </table>
+    <h3>Results: Do maintainers differ in how they respond to deduplication-related patches?</h3>
 
-    <h3>Comparing maintainers</h3>
+<p>
+  To answer this question, for each maintainer we count the threads in which they participated and compute the acceptance rate among those threads with known Patchwork status.
+</p>
 
-    <p>
-      A central part of the study is to compare how maintainers respond to deduplication patches. The first plan is to identify, for each thread, the last maintainer who replied. This gives a simple proxy for the maintainer most closely associated with the final direction of the discussion.
-    </p>
 
-    <p>
-      However, this may be too simplistic. If one maintainer frequently replies last across many threads, the analysis could overrepresent that person. Therefore, we also keep a second plan: instead of considering only the last maintainer reply, we can collect all maintainers who participated in the thread and compare acceptance or rejection patterns across that broader set.
-    </p>
+<figure>
+  <img src="paper_proposal_q3.png" alt="Acceptance rate by maintainer for code duplication and redundancy removal patches">
+  <figcaption>
+    Acceptance rate by maintainer for the top five maintainers by participation, considering only threads with known Patchwork status.
+  </figcaption>
+</figure>
 
-    <table>
-      <thead>
-        <tr>
-          <th>Analysis</th>
-          <th>Definition</th>
-          <th>Risk</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td>Plan A</td>
-          <td>Use the last maintainer who replied in each thread.</td>
-          <td>May be biased if one maintainer often replies last.</td>
-        </tr>
-        <tr>
-          <td>Plan B</td>
-          <td>Use all maintainers who replied in each thread.</td>
-          <td>May overcount threads with long discussions or many maintainers.</td>
-        </tr>
-      </tbody>
-    </table>
+<p>
+  The acceptance rate varies across maintainers, but the differences should be interpreted carefully because the number of threads per maintainer is small for several cases. For code-duplication threads, Jonathan Cameron appears most frequently in the data and accepted 16.7% of the threads with known status. Other maintainers show lower acceptance rates, including some with no accepted patches in this subset. For redundancy-removal threads, acceptance rates are slightly higher overall: Jonathan Cameron accepted 20.3%, while Nuno Sá accepted 23.1% of the threads with known status. Overall, the figure suggests that maintainer-level differences may exist, but a larger sample and a more careful statistical analysis would be needed before making strong claims.
+</p>
 
-    <p>
-      We will treat maintainer comparison as exploratory rather than causal. A higher or lower acceptance rate for a maintainer does not necessarily mean that the maintainer is more or less favorable to deduplication. It may reflect subsystem differences, patch quality, contributor experience, or the kinds of deduplication changes submitted to that maintainer.
-    </p>
+
+<h3>Conclusion and next steps</h3>
+
+<p>
+  This small exploration suggests that deduplication-related patches can be studied systematically from Linux kernel mailing-list data, but the current analysis should be seen only as a first demonstration of the pipeline.
+</p>
+
+<p>
+  To expand this idea into a full paper, one could try different filtering strategies, including alternative regex patterns and LLM prompts, extend the analysis to other subsystems beyond <code>iio</code>, and perform manual verification of the LLM classifications on a labeled subset of threads. This would make it possible to estimate classification quality and support stronger claims about how code duplication and redundancy-removal patches are discussed and reviewed.
+</p>
+  </div>
+</section>
 
 </body>
 </html>
